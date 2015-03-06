@@ -2,7 +2,9 @@
 require("./libs/bongiovi-min.js");
 
 Model = {};
-Model.params = {};
+Model.params = {
+	numParticles:64
+};
 
 (function() {
 
