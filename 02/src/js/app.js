@@ -30,11 +30,6 @@ Model.params = {
 		document.body.appendChild(this.canvas);
 		this.canvas.className = "main-canvas";
 		bongiovi.GL.init(this.canvas);
-
-		this.miniCanvas = document.createElement("canvas");
-		this.miniCanvas.className = "mini-canvas";
-		this.miniCtx = this.miniCanvas.getContext("2d");
-		document.body.appendChild(this.miniCanvas);
 		this.resize();
 
 		this._scene = new SceneSound();
@@ -44,26 +39,12 @@ Model.params = {
 	};
 
 	p._loop = function() {
-		TWEEN.update();
 		this._scene.loop();
-
-		this.miniCtx.clearRect(0, 0, this.miniCanvas.width, this.miniCanvas.height);
-		// this.miniCtx.fillStyle = "#f00";
-		// this.miniCtx.fillRect(0, 0, this.miniCanvas.width, this.miniCanvas.height);
-		this.miniCtx.drawImage( bongiovi.GL.canvas, 0, 0, bongiovi.GL.canvas.width, bongiovi.GL.canvas.height, 0, 0, this.miniCanvas.width, this.miniCanvas.height);
 	};
 
 
 	p.resize = function(e) {
-		bongiovi.GL.setSize(window.innerWidth, window.innerHeight * .5);
-		bongiovi.GL.canvas.style.marginTop = window.innerHeight * .25 + "px";
-
-		var width = 50;
-		var height = width / bongiovi.GL.aspectRatio;
-		console.log(width, height);
-
-		this.miniCanvas.width = width;
-		this.miniCanvas.height = height;
+		bongiovi.GL.setSize(window.innerWidth, window.innerHeight);
 	};
 })();
 

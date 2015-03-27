@@ -27,9 +27,11 @@ html {
 
 .desc {
   font-family: Courier New;
-  font-size:12px;
+  font-size: 12px;
   position: absolute;
-  left:25px;
-  bottom:25px;
-  color:white;
+  left: 15px;
+  bottom: 15px;
+  margin: 0px;
+  color: #666;
+  letter-spacing: 1.5px;
 }

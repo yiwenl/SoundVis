@@ -1,292 +1,3 @@
-(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-// app.js
-require("./libs/bongiovi-min.js");
-
-Model = {};
-Model.params = {
-	numParticles:64
-};
-
-(function() {
-
-	var SceneSound = require("./SceneSound");
-
-	Main = function() {
-		document.addEventListener("DOMContentLoaded", this._init.bind(this));
-	}
-
-	var p = Main.prototype;
-
-	p._init = function() {
-		bongiovi.SimpleImageLoader.load([
-			"assets/images/bg.jpg"
-			],this, this._onImageLoaded);
-	};
-
-	p._onImageLoaded = function(img) {
-		Model.images = img;
-		console.log("Images Loaded : ", Model.images);
-
-		this.canvas = document.createElement("canvas");
-		document.body.appendChild(this.canvas);
-		this.canvas.className = "main-canvas";
-		bongiovi.GL.init(this.canvas);
-
-		this.miniCanvas = document.createElement("canvas");
-		this.miniCanvas.className = "mini-canvas";
-		this.miniCtx = this.miniCanvas.getContext("2d");
-		document.body.appendChild(this.miniCanvas);
-		this.resize();
-
-		this._scene = new SceneSound();
-		bongiovi.Scheduler.addEF(this, this._loop);
-
-		window.addEventListener("resize", this.resize.bind(this));
-	};
-
-	p._loop = function() {
-		TWEEN.update();
-		this._scene.loop();
-
-		this.miniCtx.clearRect(0, 0, this.miniCanvas.width, this.miniCanvas.height);
-		// this.miniCtx.fillStyle = "#f00";
-		// this.miniCtx.fillRect(0, 0, this.miniCanvas.width, this.miniCanvas.height);
-		this.miniCtx.drawImage( bongiovi.GL.canvas, 0, 0, bongiovi.GL.canvas.width, bongiovi.GL.canvas.height, 0, 0, this.miniCanvas.width, this.miniCanvas.height);
-	};
-
-
-	p.resize = function(e) {
-		bongiovi.GL.setSize(window.innerWidth, window.innerHeight * .5);
-		bongiovi.GL.canvas.style.marginTop = window.innerHeight * .25 + "px";
-
-		var width = 50;
-		var height = width / bongiovi.GL.aspectRatio;
-		console.log(width, height);
-
-		this.miniCanvas.width = width;
-		this.miniCanvas.height = height;
-	};
-})();
-
-new Main();
-},{"./SceneSound":2,"./libs/bongiovi-min.js":4}],2:[function(require,module,exports){
-// SceneSound.js
-
-var GL = bongiovi.GL;
-var random = function(min, max) { return min + Math.random() * (max - min);	}
-
-//	IMPORTS
-var GLTexture = bongiovi.GLTexture;
-var ViewCopy = bongiovi.ViewCopy;
-var ViewCircles = require("./ViewCircles.js");
-
-function SceneSound() {
-	this.frequencies = [];
-	this._initSound();
-	this.colors = [ 
-						[0.9098039215686274,0.8352941176470589,0.7176470588235294],
-						[0.054901960784313725,0.1411764705882353,0.18823529411764706],
-						[0.9882352941176471,0.22745098039215686,0.3176470588235294],
-						[0.9607843137254902,0.7019607843137254,0.28627450980392155],
-						[0.9098039215686274,0.8352941176470589,0.7254901960784313]
-						];
-
-	window.addEventListener("keydown", this._onKeyDown.bind(this));
-	bongiovi.Scene.call(this);
-}
-
-var p = SceneSound.prototype = new bongiovi.Scene();
-p.constructor = SceneSound;
-
-p._initSound = function() {
-	var that = this;
-	this.soundOffset = 0;
-	this.preSoundOffset = 0;
-	this.sound = Sono.load({
-	    url: ['assets/audio/03.mp3'],
-	    volume: 1.0,
-	    loop: true,
-	    onComplete: function(sound) {
-	    	console.debug("Sound Loaded");
-	    	that.analyser = sound.effect.analyser(64);
-	    	sound.play();
-	    }
-	});
-};
-
-
-p._initViews = function() {
-	this._vCopy   = new ViewCopy();
-	this._vCircles = new ViewCircles(this.colors);
-};
-
-
-p.render = function() {
-	this._getSoundData();
-
-	GL.setMatrices(this.cameraOtho);
-	GL.rotate(this.rotationFront);
-	this._vCircles.render();
-};
-
-
-p._getSoundData = function() {
-	if(this.analyser) {
-		this.frequencies = this.analyser.getFrequencies();
-	}
-
-	var soundOffset = 0;
-	if(this.analyser) {
-		var f = this.analyser.getFrequencies();
-		for(var i=0; i<f.length; i++) {
-			soundOffset += f[i];	
-		}
-		soundOffset /= ( f.length * 100);
-	}
-
-	var beatThreshold = .45;
-	if(soundOffset - this.preSoundOffset > beatThreshold) {
-		this.preSoundOffset = soundOffset;
-		this.soundOffset = soundOffset;
-		console.debug("Trigger !");
-		// this._onMouseDown(null, true, soundOffset);
-		if(this._vCircles) this._vCircles.addWave(soundOffset);
-	}
-	this.soundOffset += ( 0 - this.soundOffset ) * .01;
-	this.preSoundOffset -= .03;
-	if(this.preSoundOffset < 0 ) this.preSoundOffset = 0;
-};
-
-
-p._onKeyDown = function(e) {
-	console.log(e.keyCode);
-
-	if(e.keyCode == 67) {
-		this.getColor();
-	}
-};
-
-
-p.getColor = function() {
-	ColourLovers.getRandomPalette(this, this._onColor.bind(this));
-};
-
-p._onColor = function(color) {
-
-	var getHex = function(str) {
-		var r = parseInt(str.substring(1, 3), 16)/255;
-		var g = parseInt(str.substring(3, 5), 16)/255;
-		var b = parseInt(str.substring(5, 7), 16)/255;
-
-		return [r, g, b];
-	}
-
-	for(var i=0; i<color.colors.length; i++) {
-		this.colors[i] = getHex(color.colors[i]);
-	}
-
-	if(this._vCircles) this._vCircles.setColor(this.colors);
-};
-
-
-module.exports = SceneSound;
-},{"./ViewCircles.js":3}],3:[function(require,module,exports){
-// ViewCircles.js
-
-var GL = bongiovi.GL;
-var gl;
-var MAX_WAVES = 10;
-var params = {
-	gap:.003,
-	generalWaveHeight:.6,
-	showFullPerlinColors:false,
-	fixCenter:false
-}
-
-var random = function(min, max) { return min + Math.random() * (max - min);	}
-
-function ViewCircles(mColors) {
-	this._colors = mColors;
-	this.waves = [];
-	bongiovi.View.call(this, null, "assets/shaders/ripple.frag");
-	// bongiovi.View.call(this, null, bongiovi.ShaderLibs.get("simpleColorFrag"));
-}
-
-var p = ViewCircles.prototype = new bongiovi.View();
-p.constructor = ViewCircles;
-
-
-p._init = function() {
-	this.mesh = bongiovi.MeshUtils.createPlane(2, 2, 1);
-};
-
-p.addWave = function(volume) {
-	var x, y;
-	y = Math.random();
-	var aspectRatio = GL.aspectRatio;
-	x = random(-aspectRatio/2, 1+aspectRatio/2);
-
-	if(params.fixCenter) x = y = .5;
-
-	var wave = new Wave().start(x, y);
-	wave.waveLength.duration *= (.5 + volume * .5);
-	this.waves.push(wave);
-
-	if(this.waves.length > MAX_WAVES) this.waves.shift();
-};
-
-p.render = function(texture) {
-	if(!this.shader.isReady() ) return;
-
-	this.shader.bind();
-	this.shader.uniform("time", "uniform1f", this.count * .01);
-	this.shader.uniform("aspectRatio", "uniform1f", GL.aspectRatio);
-	this.shader.uniform("generalWaveHeight", "uniform1f", params.generalWaveHeight);
-	this.shader.uniform("showFullPerlinColors", "uniform1f", params.showFullPerlinColors ? 1.0 : 0.0);
-	for(var i=0; i<MAX_WAVES; i++) {
-		var wave = this.waves[i];
-		if( wave == undefined) {
-			this.shader.uniform("waveCenter"+i, "uniform2fv", [.5, .5]);
-			this.shader.uniform("waveFront"+i, "uniform1f", -1);
-			this.shader.uniform("waveLength"+i, "uniform1f", 0);
-		} else {
-			this.shader.uniform("waveCenter"+i, "uniform2fv", wave.center);
-			this.shader.uniform("waveFront"+i, "uniform1f", wave.waveFront);
-			this.shader.uniform("waveLength"+i, "uniform1f", wave.waveLength);
-		}
-	}
-
-	for(var i=0; i<this._colors.length; i++) {
-		this.shader.uniform("color"+i, "uniform3fv", this._colors[i]);
-	}
-	GL.draw(this.mesh);
-};
-
-p.setColor = function(mColors) {	this._colors = mColors;	};
-
-
-(function() {
-	var random = function(min, max) { return min + Math.random() * (max - min);	}
-
-	Wave = function() {
-		this.center = [.5, .5];
-		this.waveFront = .0;
-		this.duration = random(5000, 13000);
-		this.waveLength = random(.1, .25);
-		this.tween;
-	}
-
-	var p = Wave.prototype;
-
-	p.start = function(x, y) {
-		this.center = [x, y];
-		this.tween = new TWEEN.Tween(this).to({"waveFront":2.5}, this.duration).easing(TWEEN.Easing.Cubic.Out).start();
-		return this;
-	};
-})();
-
-module.exports = ViewCircles;
-},{}],4:[function(require,module,exports){
 (function(d){var f;"undefined"==typeof exports?"function"==typeof define&&"object"==typeof define.amd&&define.amd?(f={},define(function(){return f})):f="undefined"!=typeof window?window:d:f=exports;(function(c){if(!h)var h=1E-6;if(!d)var d="undefined"!=typeof Float32Array?Float32Array:Array;if(!l)var l=Math.random;var f={setMatrixArrayType:function(a){d=a}};"undefined"!=typeof c&&(c.glMatrix=f);var s=Math.PI/180;f.toRadian=function(a){return a*s};var p={create:function(){var a=new d(2);return a[0]=
 0,a[1]=0,a},clone:function(a){var b=new d(2);return b[0]=a[0],b[1]=a[1],b},fromValues:function(a,b){var e=new d(2);return e[0]=a,e[1]=b,e},copy:function(a,b){return a[0]=b[0],a[1]=b[1],a},set:function(a,b,e){return a[0]=b,a[1]=e,a},add:function(a,b,e){return a[0]=b[0]+e[0],a[1]=b[1]+e[1],a},subtract:function(a,b,e){return a[0]=b[0]-e[0],a[1]=b[1]-e[1],a}};p.sub=p.subtract;p.multiply=function(a,b,e){return a[0]=b[0]*e[0],a[1]=b[1]*e[1],a};p.mul=p.multiply;p.divide=function(a,b,e){return a[0]=b[0]/
 e[0],a[1]=b[1]/e[1],a};p.div=p.divide;p.min=function(a,b,e){return a[0]=Math.min(b[0],e[0]),a[1]=Math.min(b[1],e[1]),a};p.max=function(a,b,e){return a[0]=Math.max(b[0],e[0]),a[1]=Math.max(b[1],e[1]),a};p.scale=function(a,b,e){return a[0]=b[0]*e,a[1]=b[1]*e,a};p.scaleAndAdd=function(a,b,e,k){return a[0]=b[0]+e[0]*k,a[1]=b[1]+e[1]*k,a};p.distance=function(a,b){var e=b[0]-a[0],k=b[1]-a[1];return Math.sqrt(e*e+k*k)};p.dist=p.distance;p.squaredDistance=function(a,b){var e=b[0]-a[0],k=b[1]-a[1];return e*
@@ -351,12 +62,13 @@ this._highTasks.pop(),d.func.apply(d.scope,d.params);for(var g=(new Date).getTim
 this._usurpTask.shift(),f=(new Date).getTime(),f-g<c)d.func.apply(d.scope,d.params);else break;this._highTasks=this._highTasks.concat(this._nextTasks);this._nextTasks=[];this._usurpTask=[]};f.addEF=function(c,d,g){g=g||[];var f=this._idTable;this._enterframeTasks[f]={scope:c,func:d,params:g};this._idTable++;return f};f.removeEF=function(c){void 0!=this._enterframeTasks[c]&&(this._enterframeTasks[c]=null);return-1};f.delay=function(c,d,g,f){var m=(new Date).getTime();this._delayTasks.push({scope:c,
 func:d,params:g,delay:f,time:m})};f.defer=function(c,d,g){this._deferTasks.push({scope:c,func:d,params:g})};f.next=function(c,d,g){this._nextTasks.push({scope:c,func:d,params:g})};f.usurp=function(c,d,g){this._usurpTask.push({scope:c,func:d,params:g})};bongiovi.Scheduler=new d})();bongiovi=window.bongiovi||{};
 (function(){var d=null,f=function(){this.aspectRatio=1;this.fieldOfView=45;this.zNear=5;this.zFar=3E3;this.shaderProgram=this.shader=this.gl=this.canvas=null},c=f.prototype;c.init=function(c,d,f,m){this.canvas=c||document.createElement("canvas");c=m||{};c.antialias=!0;this.gl=this.canvas.getContext("experimental-webgl",c);void 0!==d&&void 0!==f?this.setSize(d,f):this.setSize(window.innerWidth,window.innerHeight);this.gl.getParameter(this.gl.SAMPLES);this.gl.getContextAttributes();this.gl.viewport(0,
-0,this.gl.viewportWidth,this.gl.viewportHeight);this.gl.enable(this.gl.DEPTH_TEST);this.gl.enable(this.gl.CULL_FACE);this.gl.enable(this.gl.BLEND);this.gl.clearColor(0,0,0,1);this.gl.clearDepth(1);this.matrix=mat4.create();mat4.identity(this.matrix);this.depthTextureExt=this.gl.getExtension("WEBKIT_WEBGL_depth_texture");this.floatTextureExt=this.gl.getExtension("OES_texture_float");this.floatTextureLinearExt=this.gl.getExtension("OES_texture_float_linear");this.enableAlphaBlending()};c.getGL=function(){return this.gl};
-c.setShader=function(c){this.shader=c};c.setShaderProgram=function(c){this.shaderProgram=c};c.setViewport=function(c,d,f,m){this.gl.viewport(c,d,f,m)};c.setMatrices=function(c){this.camera=c};c.rotate=function(c){mat4.copy(this.matrix,c)};c.enableAlphaBlending=function(){this.gl.blendFunc(this.gl.SRC_ALPHA,this.gl.ONE_MINUS_SRC_ALPHA)};c.enableAdditiveBlending=function(){this.gl.blendFunc(this.gl.ONE,this.gl.ONE)};c.clear=function(c,d,f,m){this.gl.clearColor(c,d,f,m);this.gl.clear(this.gl.COLOR_BUFFER_BIT|
-this.gl.DEPTH_BUFFER_BIT)};c.draw=function(c){function d(c,h,g){void 0==h.cacheAttribLoc&&(h.cacheAttribLoc={});void 0==h.cacheAttribLoc[g]&&(h.cacheAttribLoc[g]=c.getAttribLocation(h,g));return h.cacheAttribLoc[g]}if(this.shaderProgram){this.gl.uniformMatrix4fv(this.shaderProgram.pMatrixUniform,!1,this.camera.getMatrix());this.gl.uniformMatrix4fv(this.shaderProgram.mvMatrixUniform,!1,this.matrix);this.gl.bindBuffer(this.gl.ARRAY_BUFFER,c.vBufferPos);var f=d(this.gl,this.shaderProgram,"aVertexPosition");
-this.gl.vertexAttribPointer(f,c.vBufferPos.itemSize,this.gl.FLOAT,!1,0,0);this.gl.enableVertexAttribArray(f);this.gl.bindBuffer(this.gl.ARRAY_BUFFER,c.vBufferUV);f=d(this.gl,this.shaderProgram,"aTextureCoord");this.gl.vertexAttribPointer(f,c.vBufferUV.itemSize,this.gl.FLOAT,!1,0,0);this.gl.enableVertexAttribArray(f);this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER,c.iBuffer);for(f=0;f<c.extraAttributes.length;f++){this.gl.bindBuffer(this.gl.ARRAY_BUFFER,c.extraAttributes[f].buffer);var m=d(this.gl,
-this.shaderProgram,c.extraAttributes[f].name);this.gl.vertexAttribPointer(m,c.extraAttributes[f].itemSize,this.gl.FLOAT,!1,0,0);this.gl.enableVertexAttribArray(m)}c.drawType==this.gl.POINTS?this.gl.drawArrays(c.drawType,0,c.vertexSize):this.gl.drawElements(c.drawType,c.iBuffer.numItems,this.gl.UNSIGNED_SHORT,0)}else console.warn("Shader program not ready yet")};c.setSize=function(c,d){this._width=c;this._height=d;this.canvas.width=this._width;this.canvas.height=this._height;this.gl.viewportWidth=
-this._width;this.gl.viewportHeight=this._height;this.gl.viewport(0,0,this._width,this._height);this.aspectRatio=this._width/this._height};c.__defineGetter__("width",function(){return this._width});c.__defineGetter__("height",function(){return this._height});f.getInstance=function(){null==d&&(d=new f);return d};bongiovi.GL=f.getInstance();bongiovi.GLTool=f.getInstance()})();bongiovi=window.bongiovi||{};
+0,this.gl.viewportWidth,this.gl.viewportHeight);this.gl.enable(this.gl.DEPTH_TEST);this.gl.enable(this.gl.CULL_FACE);this.gl.enable(this.gl.BLEND);this.gl.clearColor(0,0,0,1);this.gl.clearDepth(1);this.matrix=mat4.create();mat4.identity(this.matrix);this.normalMatrix=mat3.create();this.depthTextureExt=this.gl.getExtension("WEBKIT_WEBGL_depth_texture");this.floatTextureExt=this.gl.getExtension("OES_texture_float");this.floatTextureLinearExt=this.gl.getExtension("OES_texture_float_linear");this.enableAlphaBlending()};
+c.getGL=function(){return this.gl};c.setShader=function(c){this.shader=c};c.setShaderProgram=function(c){this.shaderProgram=c};c.setViewport=function(c,d,f,m){this.gl.viewport(c,d,f,m)};c.setMatrices=function(c){this.camera=c};c.rotate=function(c){mat4.copy(this.matrix,c);mat4.multiply(this.matrix,this.camera.getMatrix(),this.matrix);mat3.fromMat4(this.normalMatrix,this.matrix);mat3.invert(this.normalMatrix,this.normalMatrix);mat3.transpose(this.normalMatrix,this.normalMatrix)};c.enableAlphaBlending=
+function(){this.gl.blendFunc(this.gl.SRC_ALPHA,this.gl.ONE_MINUS_SRC_ALPHA)};c.enableAdditiveBlending=function(){this.gl.blendFunc(this.gl.ONE,this.gl.ONE)};c.clear=function(c,d,f,m){this.gl.clearColor(c,d,f,m);this.gl.clear(this.gl.COLOR_BUFFER_BIT|this.gl.DEPTH_BUFFER_BIT)};c.draw=function(c){function d(c,h,g){void 0==h.cacheAttribLoc&&(h.cacheAttribLoc={});void 0==h.cacheAttribLoc[g]&&(h.cacheAttribLoc[g]=c.getAttribLocation(h,g));return h.cacheAttribLoc[g]}if(this.shaderProgram){this.gl.uniformMatrix4fv(this.shaderProgram.pMatrixUniform,
+!1,this.camera.projection||this.camera.getMatrix());this.gl.uniformMatrix4fv(this.shaderProgram.mvMatrixUniform,!1,this.matrix);this.gl.bindBuffer(this.gl.ARRAY_BUFFER,c.vBufferPos);var f=d(this.gl,this.shaderProgram,"aVertexPosition");this.gl.vertexAttribPointer(f,c.vBufferPos.itemSize,this.gl.FLOAT,!1,0,0);this.gl.enableVertexAttribArray(f);this.gl.bindBuffer(this.gl.ARRAY_BUFFER,c.vBufferUV);f=d(this.gl,this.shaderProgram,"aTextureCoord");this.gl.vertexAttribPointer(f,c.vBufferUV.itemSize,this.gl.FLOAT,
+!1,0,0);this.gl.enableVertexAttribArray(f);this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER,c.iBuffer);for(f=0;f<c.extraAttributes.length;f++){this.gl.bindBuffer(this.gl.ARRAY_BUFFER,c.extraAttributes[f].buffer);var m=d(this.gl,this.shaderProgram,c.extraAttributes[f].name);this.gl.vertexAttribPointer(m,c.extraAttributes[f].itemSize,this.gl.FLOAT,!1,0,0);this.gl.enableVertexAttribArray(m)}c.drawType==this.gl.POINTS?this.gl.drawArrays(c.drawType,0,c.vertexSize):this.gl.drawElements(c.drawType,c.iBuffer.numItems,
+this.gl.UNSIGNED_SHORT,0)}else console.warn("Shader program not ready yet")};c.setSize=function(c,d){this._width=c;this._height=d;this.canvas.width=this._width;this.canvas.height=this._height;this.gl.viewportWidth=this._width;this.gl.viewportHeight=this._height;this.gl.viewport(0,0,this._width,this._height);this.aspectRatio=this._width/this._height};c.__defineGetter__("width",function(){return this._width});c.__defineGetter__("height",function(){return this._height});f.getInstance=function(){null==
+d&&(d=new f);return d};bongiovi.GL=f.getInstance();bongiovi.GLTool=f.getInstance()})();bongiovi=window.bongiovi||{};
 (function(){var d=function(c){void 0==c&&(c=document);this._isRotateZ=0;this.matrix=mat4.create();this.m=mat4.create();this._vZaxis=vec3.clone([0,0,0]);this._zAxis=vec3.clone([0,0,-1]);this.preMouse={x:0,y:0};this.mouse={x:0,y:0};this._isMouseDown=!1;this._rotation=quat.clone([0,0,1,0]);this.tempRotation=quat.clone([0,0,0,0]);this._currDiffY=this._currDiffX=this.diffY=this.diffX=this._rotateZMargin=0;this._offset=0.0040;this._easing=0.1;this._slerp=-1;this._isLocked=!1;var d=this;c.addEventListener("mousedown",
 function(c){d._onMouseDown(c)});c.addEventListener("touchstart",function(c){d._onMouseDown(c)});c.addEventListener("mouseup",function(c){d._onMouseUp(c)});c.addEventListener("touchend",function(c){d._onMouseUp(c)});c.addEventListener("mousemove",function(c){d._onMouseMove(c)});c.addEventListener("touchmove",function(c){d._onMouseMove(c)})},f=d.prototype;f.inverseControl=function(c){this._isInvert=void 0==c?!0:c};f.lock=function(c){this._isLocked=void 0==c?!0:c};f.getMousePos=function(c){var d;void 0!=
 c.changedTouches?(d=c.changedTouches[0].pageX,c=c.changedTouches[0].pageY):(d=c.clientX,c=c.clientY);return{x:d,y:c}};f._onMouseDown=function(c){if(!this._isLocked&&!this._isMouseDown){c=this.getMousePos(c);var d=quat.clone(this._rotation);this._updateRotation(d);this._rotation=d;this._isMouseDown=!0;this._isRotateZ=0;this.preMouse={x:c.x,y:c.y};if(c.y<this._rotateZMargin||c.y>window.innerHeight-this._rotateZMargin)this._isRotateZ=1;else if(c.x<this._rotateZMargin||c.x>window.innerWidth-this._rotateZMargin)this._isRotateZ=
@@ -368,15 +80,16 @@ this._targetQuat[2],this._targetQuat[3]),this._targetQuat=void 0,this._slerp=-1)
 (function(){var d=function(c){void 0==c&&(c=document);this._isRotateZ=0;this.matrix=mat4.create();this.m=mat4.create();this._vZaxis=vec3.clone([0,0,0]);this._zAxis=vec3.clone([0,0,-1]);this.preMouse={x:0,y:0};this.mouse={x:0,y:0};this._isMouseDown=!1;this._rotation=quat.clone([0,0,1,0]);this.tempRotation=quat.clone([0,0,0,0]);this._rotateZMargin=80;this._currDiffY=this._currDiffX=this.diffY=this.diffX=0;this._offset=0.0040;this._easing=0.1;this._slerp=-1;this._isLocked=!1;var d=this;c.addEventListener("mousedown",
 function(c){d._onMouseDown(c)});c.addEventListener("touchstart",function(c){d._onMouseDown(c)});c.addEventListener("mouseup",function(c){d._onMouseUp(c)});c.addEventListener("touchend",function(c){d._onMouseUp(c)});c.addEventListener("mousemove",function(c){d._onMouseMove(c)});c.addEventListener("touchmove",function(c){d._onMouseMove(c)})},f=d.prototype;f.inverseControl=function(c){this._isInvert=void 0==c?!0:c};f.lock=function(c){this._isLocked=void 0==c?!0:c};f.getMousePos=function(c){var d;void 0!=
 c.changedTouches?(d=c.changedTouches[0].pageX,c=c.changedTouches[0].pageY):(d=c.clientX,c=c.clientY);return{x:d,y:c}};f._onMouseDown=function(c){if(!this._isLocked&&!this._isMouseDown){c=this.getMousePos(c);var d=quat.clone(this._rotation);this._updateRotation(d);this._rotation=d;this._isMouseDown=!0;this._isRotateZ=0;this.preMouse={x:c.x,y:c.y};if(c.y<this._rotateZMargin||c.y>window.innerHeight-this._rotateZMargin)this._isRotateZ=1;else if(c.x<this._rotateZMargin||c.x>window.innerWidth-this._rotateZMargin)this._isRotateZ=
-2;this._currDiffY=this.diffY=this._currDiffX=this.diffX=0}};f._onMouseMove=function(c){this._isLocked||(c.touches&&c.preventDefault(),this.mouse=this.getMousePos(c))};f._onMouseUp=function(c){!this._isLocked&&this._isMouseDown&&(this._isMouseDown=!1)};f.setCameraPos=function(c,d){this._easing=d=d||this._easing;0<this._slerp&&(this._slerp=0,quat.copy(this._rotation,this.tempRotation));var g=quat.clone(this._rotation);this._updateRotation(g);this._rotation=quat.clone(g);this._currDiffY=this.diffY=this._currDiffX=
-this.diffX=0;this._isMouseDown=!1;this._isRotateZ=0;this._targetQuat=quat.clone(c);this._slerp=1};f.resetQuat=function(){this._rotation=quat.clone([0,0,1,0]);this.tempRotation=quat.clone([0,0,0,0]);this._targetQuat=void 0;this._slerp=-1};f.update=function(){mat4.identity(this.m);void 0==this._targetQuat?(quat.set(this.tempRotation,this._rotation[0],this._rotation[1],this._rotation[2],this._rotation[3]),this._updateRotation(this.tempRotation)):(this._slerp+=0.1*(0-this._slerp),0.0010>this._slerp?(quat.set(this._rotation,
-this._targetQuat[0],this._targetQuat[1],this._targetQuat[2],this._targetQuat[3]),this._targetQuat=void 0,this._slerp=-1):(quat.set(this.tempRotation,0,0,0,0),quat.slerp(this.tempRotation,this._targetQuat,this._rotation,this._slerp)));vec3.transformQuat(this._vZaxis,this._vZaxis,this.tempRotation);mat4.fromQuat(this.matrix,this.tempRotation)};f._updateRotation=function(c){this._isMouseDown&&!this._isLocked&&(this.diffX=-(this.mouse.x-this.preMouse.x),this.diffY=this.mouse.y-this.preMouse.y,this._isInvert&&
-(this.diffX=-this.diffX),this._isInvert&&(this.diffY=-this.diffY));this._currDiffX+=(this.diffX-this._currDiffX)*this._easing;this._currDiffY+=(this.diffY-this._currDiffY)*this._easing;if(0<this._isRotateZ)if(1==this._isRotateZ)var d=-this._currDiffX*this._offset,d=d*(this.preMouse.y<this._rotateZMargin?-1:1),g=quat.clone([0,0,Math.sin(d),Math.cos(d)]);else d=-this._currDiffY*this._offset,d*=this.preMouse.x<this._rotateZMargin?1:-1,g=quat.clone([0,0,-Math.sin(d),Math.cos(d)]);else d=vec3.clone([this._currDiffX,
-this._currDiffY,0]),g=vec3.create(),vec3.cross(g,d,this._zAxis),vec3.normalize(g,g),d=vec3.length(d)*this._offset,g=quat.clone([Math.sin(d)*g[0],Math.sin(d)*g[1],Math.sin(d)*g[2],Math.cos(d)]);quat.multiply(c,g,c)};f.__defineGetter__("rotateMargin",function(){return this._rotateZMargin});f.__defineSetter__("rotateMargin",function(c){this._rotateZMargin=c});bongiovi.SceneRotation=d})();(function(){var d=bongiovi.GL,f=function(){this.gl=bongiovi.GLTool.gl;this._children=[];this._init()},c=f.prototype;c._init=function(){this.camera=new bongiovi.SimpleCamera(d.canvas);this.camera.setPerspective(45*Math.PI/180,d.aspectRatio,5,3E3);this.camera.lockRotation();var c=vec3.clone([0,0,500]),g=vec3.create(),f=vec3.clone([0,-1,0]);this.camera.lookAt(c,g,f);this.sceneRotation=new bongiovi.SceneRotation(d.canvas);this.rotationFront=mat4.create();mat4.identity(this.rotationFront);this.cameraOtho=
+2;this._currDiffY=this.diffY=this._currDiffX=this.diffX=0}};f._onMouseMove=function(c){this._isLocked||(c.touches&&c.preventDefault(),this.mouse=this.getMousePos(c))};f._onMouseUp=function(c){!this._isLocked&&this._isMouseDown&&(this._isMouseDown=!1)};f.setCameraPos=function(c,d){this._easing=d=d||this._easing;console.log("setCameraPos :",this._slerp);0<this._slerp&&(quat.set(this._rotation,this._targetQuat[0],this._targetQuat[1],this._targetQuat[2],this._targetQuat[3]),this._targetQuat=void 0,this._slerp=
+-1);var g=quat.clone(this._rotation);this._updateRotation(g);this._rotation=quat.clone(g);this._currDiffY=this.diffY=this._currDiffX=this.diffX=0;this._isMouseDown=!1;this._isRotateZ=0;this._targetQuat=quat.clone(c);this._slerp=1};f.resetQuat=function(){this._rotation=quat.clone([0,0,1,0]);this.tempRotation=quat.clone([0,0,0,0]);this._targetQuat=void 0;this._slerp=-1};f.update=function(){mat4.identity(this.m);void 0==this._targetQuat?(quat.set(this.tempRotation,this._rotation[0],this._rotation[1],
+this._rotation[2],this._rotation[3]),this._updateRotation(this.tempRotation)):(this._slerp+=0.1*(0-this._slerp),0.0010>this._slerp?(quat.set(this._rotation,this._targetQuat[0],this._targetQuat[1],this._targetQuat[2],this._targetQuat[3]),this._targetQuat=void 0,this._slerp=-1):(quat.set(this.tempRotation,0,0,0,0),quat.slerp(this.tempRotation,this._targetQuat,this._rotation,this._slerp)));vec3.transformQuat(this._vZaxis,this._vZaxis,this.tempRotation);mat4.fromQuat(this.matrix,this.tempRotation)};f._updateRotation=
+function(c){this._isMouseDown&&!this._isLocked&&(this.diffX=-(this.mouse.x-this.preMouse.x),this.diffY=this.mouse.y-this.preMouse.y,this._isInvert&&(this.diffX=-this.diffX),this._isInvert&&(this.diffY=-this.diffY));this._currDiffX+=(this.diffX-this._currDiffX)*this._easing;this._currDiffY+=(this.diffY-this._currDiffY)*this._easing;if(0<this._isRotateZ)if(1==this._isRotateZ)var d=-this._currDiffX*this._offset,d=d*(this.preMouse.y<this._rotateZMargin?-1:1),g=quat.clone([0,0,Math.sin(d),Math.cos(d)]);
+else d=-this._currDiffY*this._offset,d*=this.preMouse.x<this._rotateZMargin?1:-1,g=quat.clone([0,0,-Math.sin(d),Math.cos(d)]);else d=vec3.clone([this._currDiffX,this._currDiffY,0]),g=vec3.create(),vec3.cross(g,d,this._zAxis),vec3.normalize(g,g),d=vec3.length(d)*this._offset,g=quat.clone([Math.sin(d)*g[0],Math.sin(d)*g[1],Math.sin(d)*g[2],Math.cos(d)]);quat.multiply(c,g,c)};f.__defineGetter__("rotateMargin",function(){return this._rotateZMargin});f.__defineSetter__("rotateMargin",function(c){this._rotateZMargin=
+c});bongiovi.SceneRotation=d})();(function(){var d=bongiovi.GL,f=function(){this.gl=bongiovi.GLTool.gl;this._children=[];this._init()},c=f.prototype;c._init=function(){this.camera=new bongiovi.SimpleCamera(d.canvas);this.camera.setPerspective(45*Math.PI/180,d.aspectRatio,5,3E3);this.camera.lockRotation();var c=vec3.clone([0,0,500]),g=vec3.create(),f=vec3.clone([0,-1,0]);this.camera.lookAt(c,g,f);this.sceneRotation=new bongiovi.SceneRotation(d.canvas);this.rotationFront=mat4.create();mat4.identity(this.rotationFront);this.cameraOtho=
 new bongiovi.Camera;this._initTextures();this._initViews();window.addEventListener("resize",this._onResize.bind(this))};c._initTextures=function(){};c._initViews=function(){};c.loop=function(){this.update();this.render()};c.update=function(){this.gl.clear(this.gl.COLOR_BUFFER_BIT|this.gl.DEPTH_BUFFER_BIT);this.sceneRotation.update();d.setViewport(0,0,d.width,d.height);d.setMatrices(this.camera);d.rotate(this.sceneRotation.matrix)};c.resize=function(){this.camera.resize&&this.camera.resize(d.aspectRatio)};
 c.render=function(){};c._onResize=function(c){};bongiovi.Scene=f})();bongiovi=window.bongiovi||{};(function(){var d=function(){this.matrix=mat4.create();mat4.identity(this.matrix);this.position=vec3.create()},f=d.prototype;f.lookAt=function(c,d,f){vec3.copy(this.position,c);mat4.identity(this.matrix);mat4.lookAt(this.matrix,c,d,f)};f.getMatrix=function(){return this.matrix};bongiovi.Camera=d})();bongiovi=window.bongiovi||{};
-(function(){var d=bongiovi.Camera,f=function(){d.call(this);this.projection=mat4.create();this.mtxFinal=mat4.create()},c=f.prototype=new d;c.setPerspective=function(c,d,f,m){this._fov=c;this._near=f;this._far=m;this._aspect=d;mat4.perspective(this.projection,c,d,f,m)};c.getMatrix=function(){mat4.multiply(this.mtxFinal,this.projection,this.matrix);return this.mtxFinal};c.resize=function(c){this._aspect=c;mat4.perspective(this.projection,this._fov,c,this._near,this._far)};c.__defineGetter__("near",
-function(){return this._near});c.__defineGetter__("far",function(){return this._far});bongiovi.CameraPerspective=f})();(function(){var d=function(c){this._listenerTarget=c||window;bongiovi.CameraPerspective.call(this);this._isLocked=!1;this._init()},f=d.prototype=new bongiovi.CameraPerspective,c=bongiovi.CameraPerspective.prototype,h=bongiovi.EaseNumber;f._init=function(){this.radius=new h(500);this.position[2]=this.radius.value;this.center=vec3.create();this.up=vec3.clone([0,-1,0]);this.lookAt(this.position,this.center,this.up);this._mouse={};this._preMouse={};this._isMouseDown=!1;this._rx=new h(0);this._rx.limit(-Math.PI/
+(function(){var d=bongiovi.Camera,f=function(){d.call(this);this.projection=mat4.create();this.mtxFinal=mat4.create()},c=f.prototype=new d;c.setPerspective=function(c,d,f,m){this._fov=c;this._near=f;this._far=m;this._aspect=d;mat4.perspective(this.projection,c,d,f,m)};c.getMatrix=function(){return this.matrix};c.resize=function(c){this._aspect=c;mat4.perspective(this.projection,this._fov,c,this._near,this._far)};c.__defineGetter__("near",function(){return this._near});c.__defineGetter__("far",function(){return this._far});
+bongiovi.CameraPerspective=f})();(function(){var d=function(c){this._listenerTarget=c||window;bongiovi.CameraPerspective.call(this);this._isLocked=!1;this._init()},f=d.prototype=new bongiovi.CameraPerspective,c=bongiovi.CameraPerspective.prototype,h=bongiovi.EaseNumber;f._init=function(){this.radius=new h(500);this.position[2]=this.radius.value;this.center=vec3.create();this.up=vec3.clone([0,-1,0]);this.lookAt(this.position,this.center,this.up);this._mouse={};this._preMouse={};this._isMouseDown=!1;this._rx=new h(0);this._rx.limit(-Math.PI/
 2,Math.PI/2);this._ry=new h(0);this._preRY=this._preRX=0;this._isInvert=this._isLockRotation=this._isLocked=!1;this._listenerTarget.addEventListener("mousewheel",this._onWheel.bind(this));this._listenerTarget.addEventListener("DOMMouseScroll",this._onWheel.bind(this));this._listenerTarget.addEventListener("mousedown",this._onMouseDown.bind(this));this._listenerTarget.addEventListener("touchstart",this._onMouseDown.bind(this));this._listenerTarget.addEventListener("mousemove",this._onMouseMove.bind(this));
 this._listenerTarget.addEventListener("touchmove",this._onMouseMove.bind(this));window.addEventListener("mouseup",this._onMouseUp.bind(this));window.addEventListener("touchend",this._onMouseUp.bind(this))};f.inverseControl=function(c){this._isInvert=void 0==c?!0:c};f.lock=function(c){this._isLocked=void 0==c?!0:c};f.lockRotation=function(c){this._isLockRotation=void 0==c?!0:c};f._onMouseDown=function(c){this._isLockRotation||this._isLocked||(this._isMouseDown=!0,g(c,this._mouse),g(c,this._preMouse),
 this._preRX=this._rx.targetValue,this._preRY=this._ry.targetValue)};f._onMouseMove=function(c){this._isLockRotation||this._isLocked||(g(c,this._mouse),c.touches&&c.preventDefault(),this._isMouseDown&&(c=this._mouse.x-this._preMouse.x,this._isInvert&&(c*=-1),this._ry.value=this._preRY-0.01*c,c=this._mouse.y-this._preMouse.y,this._isInvert&&(c*=-1),this._rx.value=this._preRX-0.01*c,this._rx.targetValue>0.5*Math.PI&&(this._rx.targetValue=Math)))};f._onMouseUp=function(c){this._isLockRotation||this._isLocked||
@@ -407,5 +120,3 @@ null),d.framebufferTexture2D(d.FRAMEBUFFER,d.DEPTH_ATTACHMENT,d.TEXTURE_2D,this.
 this.fbo.height);d.clear(0,0,0,0);this.view.render(c);this.fbo.unbind();d.setViewport(0,0,d.canvas.width,d.canvas.height);return this.fbo.getTexture()};c.getTexture=function(){return this.fbo.getTexture()};bongiovi.Pass=f})();(function(d){d=function(){this._passes=[]};var f=d.prototype=new bongiovi.Pass;f.addPass=function(c){this._passes.push(c)};f.render=function(c){this.texture=c;for(c=0;c<this._passes.length;c++)this.texture=this._passes[c].render(this.texture);return this.texture};f.getTexture=function(){return this.texture};bongiovi.EffectComposer=d})();(function(){bongiovi.MeshUtils={};bongiovi.MeshUtils.createPlane=function(d,f,c){var h=[],g=[],l=[],m=d/c,s=f/c,p=1/c,n=0;d=0.5*-d;f=0.5*-f;for(var r=0;r<c;r++)for(var w=0;w<c;w++){var t=m*r+d,q=s*w+f;h.push([t,q,0]);h.push([t+m,q,0]);h.push([t+m,q+s,0]);h.push([t,q+s,0]);t=r/c;q=w/c;g.push([t,q]);g.push([t+p,q]);g.push([t+p,q+p]);g.push([t,q+p]);l.push(4*n+0);l.push(4*n+1);l.push(4*n+2);l.push(4*n+0);l.push(4*n+2);l.push(4*n+3);n++}c=new bongiovi.Mesh(h.length,l.length,bongiovi.GLTool.gl.TRIANGLES);
 c.bufferVertex(h);c.bufferTexCoords(g);c.bufferIndices(l);return c};bongiovi.MeshUtils.createSphere=function(d,f){for(var c=[],h=[],g=[],l=0,m=1/f,s=function(c,g){var a=c/f*Math.PI-0.5*Math.PI,b=g/f*Math.PI*2,e=[];e[1]=Math.sin(a)*d;a=Math.cos(a)*d;e[0]=Math.cos(b)*a;e[2]=Math.sin(b)*a;e[0]=Math.floor(1E4*e[0])/1E4;e[1]=Math.floor(1E4*e[1])/1E4;e[2]=Math.floor(1E4*e[2])/1E4;return e},p=0;p<f;p++)for(var n=0;n<f;n++){c.push(s(p,n));c.push(s(p+1,n));c.push(s(p+1,n+1));c.push(s(p,n+1));var r=n/f,w=p/
 f;h.push([1-r,w]);h.push([1-r,w+m]);h.push([1-r-m,w+m]);h.push([1-r-m,w]);g.push(4*l+0);g.push(4*l+1);g.push(4*l+2);g.push(4*l+0);g.push(4*l+2);g.push(4*l+3);l++}l=new bongiovi.Mesh(c.length,g.length,bongiovi.GLTool.gl.TRIANGLES);l.bufferVertex(c);l.bufferTexCoords(h);l.bufferIndices(g);return l};bongiovi.MeshUtils.createCube=function(d,f){}})();
-
-},{}]},{},[1]);

@@ -1,3 +1,129 @@
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+// app.js
+require("./libs/bongiovi-min.js");
+
+Model = {};
+Model.params = {
+	numParticles:64
+};
+
+(function() {
+
+	var SceneSound = require("./SceneSound");
+
+	Main = function() {
+		document.addEventListener("DOMContentLoaded", this._init.bind(this));
+	}
+
+	var p = Main.prototype;
+
+	p._init = function() {
+		bongiovi.SimpleImageLoader.load([
+			"assets/images/bg.jpg"
+			],this, this._onImageLoaded);
+	};
+
+	p._onImageLoaded = function(img) {
+		Model.images = img;
+		console.log("Images Loaded : ", Model.images);
+
+		this.canvas = document.createElement("canvas");
+		document.body.appendChild(this.canvas);
+		this.canvas.className = "main-canvas";
+		bongiovi.GL.init(this.canvas);
+		this.resize();
+
+		this._scene = new SceneSound();
+		bongiovi.Scheduler.addEF(this, this._loop);
+
+		window.addEventListener("resize", this.resize.bind(this));
+	};
+
+	p._loop = function() {
+		this._scene.loop();
+	};
+
+
+	p.resize = function(e) {
+		bongiovi.GL.setSize(window.innerWidth, window.innerHeight);
+	};
+})();
+
+new Main();
+},{"./SceneSound":2,"./libs/bongiovi-min.js":3}],2:[function(require,module,exports){
+// SceneSound.js
+
+var GL = bongiovi.GL;
+var random = function(min, max) { return min + Math.random() * (max - min);	}
+
+//	IMPORTS
+var GLTexture = bongiovi.GLTexture;
+var ViewCopy = bongiovi.ViewCopy;
+
+function SceneSound() {
+	this.frequencies = [];
+	this._initSound();
+	bongiovi.Scene.call(this);
+}
+
+var p = SceneSound.prototype = new bongiovi.Scene();
+p.constructor = SceneSound;
+
+p._initSound = function() {
+	var that = this;
+	this.soundOffset = 0;
+	this.preSoundOffset = 0;
+	this.sound = Sono.load({
+	    url: ['assets/audio/03.mp3'],
+	    volume: 0.0,
+	    loop: true,
+	    onComplete: function(sound) {
+	    	console.debug("Sound Loaded");
+	    	that.analyser = sound.effect.analyser(64);
+	    	sound.play();
+	    }
+	});
+};
+
+
+p._initViews = function() {
+	this._vCopy   = new ViewCopy();
+};
+
+
+p.render = function() {
+	this._getSoundData();
+
+};
+
+
+p._getSoundData = function() {
+	if(this.analyser) {
+		this.frequencies = this.analyser.getFrequencies();
+	}
+
+	var soundOffset = 0;
+	if(this.analyser) {
+		var f = this.analyser.getFrequencies();
+		for(var i=0; i<f.length; i++) {
+			soundOffset += f[i];	
+		}
+		soundOffset /= ( f.length * 100);
+	}
+
+	var beatThreshold = .45;
+	if(soundOffset - this.preSoundOffset > beatThreshold) {
+		this.preSoundOffset = soundOffset;
+		this.soundOffset = soundOffset;
+		console.debug("Trigger !");
+	}
+	this.soundOffset += ( 0 - this.soundOffset ) * .01;
+	this.preSoundOffset -= .03;
+	if(this.preSoundOffset < 0 ) this.preSoundOffset = 0;
+};
+
+module.exports = SceneSound;
+},{}],3:[function(require,module,exports){
 (function(d){var f;"undefined"==typeof exports?"function"==typeof define&&"object"==typeof define.amd&&define.amd?(f={},define(function(){return f})):f="undefined"!=typeof window?window:d:f=exports;(function(c){if(!h)var h=1E-6;if(!d)var d="undefined"!=typeof Float32Array?Float32Array:Array;if(!l)var l=Math.random;var f={setMatrixArrayType:function(a){d=a}};"undefined"!=typeof c&&(c.glMatrix=f);var s=Math.PI/180;f.toRadian=function(a){return a*s};var p={create:function(){var a=new d(2);return a[0]=
 0,a[1]=0,a},clone:function(a){var b=new d(2);return b[0]=a[0],b[1]=a[1],b},fromValues:function(a,b){var e=new d(2);return e[0]=a,e[1]=b,e},copy:function(a,b){return a[0]=b[0],a[1]=b[1],a},set:function(a,b,e){return a[0]=b,a[1]=e,a},add:function(a,b,e){return a[0]=b[0]+e[0],a[1]=b[1]+e[1],a},subtract:function(a,b,e){return a[0]=b[0]-e[0],a[1]=b[1]-e[1],a}};p.sub=p.subtract;p.multiply=function(a,b,e){return a[0]=b[0]*e[0],a[1]=b[1]*e[1],a};p.mul=p.multiply;p.divide=function(a,b,e){return a[0]=b[0]/
 e[0],a[1]=b[1]/e[1],a};p.div=p.divide;p.min=function(a,b,e){return a[0]=Math.min(b[0],e[0]),a[1]=Math.min(b[1],e[1]),a};p.max=function(a,b,e){return a[0]=Math.max(b[0],e[0]),a[1]=Math.max(b[1],e[1]),a};p.scale=function(a,b,e){return a[0]=b[0]*e,a[1]=b[1]*e,a};p.scaleAndAdd=function(a,b,e,k){return a[0]=b[0]+e[0]*k,a[1]=b[1]+e[1]*k,a};p.distance=function(a,b){var e=b[0]-a[0],k=b[1]-a[1];return Math.sqrt(e*e+k*k)};p.dist=p.distance;p.squaredDistance=function(a,b){var e=b[0]-a[0],k=b[1]-a[1];return e*
@@ -118,3 +244,5 @@ null),d.framebufferTexture2D(d.FRAMEBUFFER,d.DEPTH_ATTACHMENT,d.TEXTURE_2D,this.
 this.fbo.height);d.clear(0,0,0,0);this.view.render(c);this.fbo.unbind();d.setViewport(0,0,d.canvas.width,d.canvas.height);return this.fbo.getTexture()};c.getTexture=function(){return this.fbo.getTexture()};bongiovi.Pass=f})();(function(d){d=function(){this._passes=[]};var f=d.prototype=new bongiovi.Pass;f.addPass=function(c){this._passes.push(c)};f.render=function(c){this.texture=c;for(c=0;c<this._passes.length;c++)this.texture=this._passes[c].render(this.texture);return this.texture};f.getTexture=function(){return this.texture};bongiovi.EffectComposer=d})();(function(){bongiovi.MeshUtils={};bongiovi.MeshUtils.createPlane=function(d,f,c){var h=[],g=[],l=[],m=d/c,s=f/c,p=1/c,n=0;d=0.5*-d;f=0.5*-f;for(var r=0;r<c;r++)for(var w=0;w<c;w++){var t=m*r+d,q=s*w+f;h.push([t,q,0]);h.push([t+m,q,0]);h.push([t+m,q+s,0]);h.push([t,q+s,0]);t=r/c;q=w/c;g.push([t,q]);g.push([t+p,q]);g.push([t+p,q+p]);g.push([t,q+p]);l.push(4*n+0);l.push(4*n+1);l.push(4*n+2);l.push(4*n+0);l.push(4*n+2);l.push(4*n+3);n++}c=new bongiovi.Mesh(h.length,l.length,bongiovi.GLTool.gl.TRIANGLES);
 c.bufferVertex(h);c.bufferTexCoords(g);c.bufferIndices(l);return c};bongiovi.MeshUtils.createSphere=function(d,f){for(var c=[],h=[],g=[],l=0,m=1/f,s=function(c,g){var a=c/f*Math.PI-0.5*Math.PI,b=g/f*Math.PI*2,e=[];e[1]=Math.sin(a)*d;a=Math.cos(a)*d;e[0]=Math.cos(b)*a;e[2]=Math.sin(b)*a;e[0]=Math.floor(1E4*e[0])/1E4;e[1]=Math.floor(1E4*e[1])/1E4;e[2]=Math.floor(1E4*e[2])/1E4;return e},p=0;p<f;p++)for(var n=0;n<f;n++){c.push(s(p,n));c.push(s(p+1,n));c.push(s(p+1,n+1));c.push(s(p,n+1));var r=n/f,w=p/
 f;h.push([1-r,w]);h.push([1-r,w+m]);h.push([1-r-m,w+m]);h.push([1-r-m,w]);g.push(4*l+0);g.push(4*l+1);g.push(4*l+2);g.push(4*l+0);g.push(4*l+2);g.push(4*l+3);l++}l=new bongiovi.Mesh(c.length,g.length,bongiovi.GLTool.gl.TRIANGLES);l.bufferVertex(c);l.bufferTexCoords(h);l.bufferIndices(g);return l};bongiovi.MeshUtils.createCube=function(d,f){}})();
+
+},{}]},{},[1]);

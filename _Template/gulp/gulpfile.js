@@ -9,7 +9,7 @@ var reload      = browserSync.reload;
 
 //	BROWSERIFY
 gulp.task('browserify', function() {
-	var bundleStream = browserify('./src/js/app.js')
+	var bundleStream = browserify('../src/js/app.js')
 	.bundle()
 	.on('error', function(err){
 		console.log(err.message);
@@ -18,12 +18,12 @@ gulp.task('browserify', function() {
 
 	bundleStream
 	.pipe(source('bundle.js'))
-	.pipe(gulp.dest('./bundle/'));
+	.pipe(gulp.dest('../bundle/'));
 });
 
 //	COMPILE FOR BUILD
 gulp.task('compile', function() {
-	var bundleStream = browserify('./src/js/app.js')
+	var bundleStream = browserify('../src/js/app.js')
 	.bundle()
 	.on('error', function(err){
 		console.warn(err.message);
@@ -33,20 +33,19 @@ gulp.task('compile', function() {
 	bundleStream
 	.pipe(source('bundle.js'))
 	.pipe(uglify())
-	.pipe(gulp.dest('./bundle/'));
+	.pipe(gulp.dest('../bundle/'));
 });
 
 gulp.task('watch', function() {
-	gulp.watch('src/js/*.js', ['browserify', browserSync.reload]);
-	gulp.watch('src/js/**.js', ['browserify', browserSync.reload]);
-	gulp.watch('assets/shaders/**.vert', ['browserify', browserSync.reload]);
-	gulp.watch('assets/shaders/**.frag', ['browserify', browserSync.reload]);
-	gulp.watch('src/scss/*.scss', ['sass']);
+	gulp.watch('../src/js/*.js', ['browserify', browserSync.reload]);
+	gulp.watch('../src/js/**.js', ['browserify', browserSync.reload]);
+	gulp.watch('../assets/shaders/*.*', ['browserify', browserSync.reload]);
+	gulp.watch('../src/scss/*.scss', ['sass']);
 	// gulp.watch("scss/*.scss", ['sass']);
 });
 
 gulp.task('sass', function() {
-	return sass('./src/scss/main.scss') 
+	return sass('../src/scss/main.scss') 
 	.on('error', function (err) {
 	  console.error('Error!', err.message);
 	})
@@ -60,10 +59,8 @@ gulp.task('sass', function() {
 
 gulp.task('browser-sync', function() {
 	browserSync({
-		server: {
-			baseDir: "./"
-		},
-		watchOptions: {
+			proxy: 'http://localhost:8888/projects/SoundVis/01/',
+			watchOptions: {
 			debounceDelay: 1000
 		}
 	});
