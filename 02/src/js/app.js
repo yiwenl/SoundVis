@@ -18,7 +18,9 @@ Model.params = {
 
 	p._init = function() {
 		bongiovi.SimpleImageLoader.load([
-			"assets/images/bg.jpg"
+			"assets/images/gold.jpg",
+			"assets/images/sky.jpg",
+			"assets/images/hdr.jpg"
 			],this, this._onImageLoaded);
 	};
 
@@ -39,12 +41,14 @@ Model.params = {
 	};
 
 	p._loop = function() {
+		TWEEN.update();
 		this._scene.loop();
 	};
 
 
 	p.resize = function(e) {
 		bongiovi.GL.setSize(window.innerWidth, window.innerHeight);
+		if(this._scene) this._scene.camera.resize(bongiovi.GL.aspectRatio);
 	};
 })();
 
