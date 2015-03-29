@@ -40,7 +40,9 @@ uniform float waveHeight9;
 varying vec2 vTextureCoord;
 varying vec3 vNormal;
 varying vec3 eye;
+
 const float PI = 3.141592653;
+const float waveLength = 2.5;
 
 vec3 getPosition(float i, float j, float numSeg) {
 	vec3 p = vec3(0);
@@ -60,11 +62,6 @@ vec3 getPosition(vec3 mValue) {
 	return getPosition(mValue.x, mValue.y, mValue.z);
 }
 
-
-// const float waveFront = 70.0;
-const float waveLength = 2.5;
-// const float waveHeight = 2.0;
-
 float getWaveHeight(float waveFront, float waveHeight, vec3 vertex) {
 	float wf = clamp(1.0 - waveFront, 0.0, 1.0) * vertex.z;
 	float offset = 0.0;
@@ -80,10 +77,6 @@ vec3 getFinalPosition(vec3 posSphere, vec3 vertex) {
 	vec3 p = normalize(posSphere);
 
 	float offset = 0.0;
-	// float dist = distance(vertex.y, waveFront);
-	// if(dist < waveLength ) {
-	// 	offset = sin( (vertex.y - waveFront + waveLength) / waveLength / 2.0 * PI) * waveHeight;
-	// }
 	offset += getWaveHeight(waveFront0, waveHeight0, vertex);
 	offset += getWaveHeight(waveFront1, waveHeight1, vertex);
 	offset += getWaveHeight(waveFront2, waveHeight2, vertex);
@@ -116,7 +109,6 @@ void main(void) {
 	vec4 mvPosition = uMVMatrix * vec4(fp, 1.0);
     gl_Position = uPMatrix * mvPosition;
     vTextureCoord = aTextureCoord;
-
     vNormal = normalize( normalMatrix * cross(v2, v1) );
 
     eye = normalize( mvPosition.rgb );
