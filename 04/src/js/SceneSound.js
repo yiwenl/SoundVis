@@ -20,6 +20,8 @@ function SceneSound() {
 	this.sceneRotation.lock(true);
 	this.camera.lockRotation(false);
 
+	this.hasFinished = false;
+
 	// this.camera._rx.value = Math.PI * .3;
 	// this.camera._ry.value = -Math.PI * .4 + Math.PI * .5;
 }
@@ -33,7 +35,7 @@ p._initSound = function() {
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
 	    url: ['assets/audio/01.mp3'],
-	    volume: 1.0,
+	    volume: 0.0,
 	    loop: false,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded", sound.data.duration);
@@ -79,50 +81,19 @@ p.render = function() {
 	this._getSoundData();
 	if(this.frequencies.length == 0) return;
 	if(this._theta == 0) {
-		var totalFrames = this.sound.data.duration * 60 + 60;
+		var totalFrames = this.sound.data.duration * 60 - 60;
 		this._thetaIncr = Math.PI * 2.0 / totalFrames;
-		console.log(this._thetaIncr, this.frequencies.length);
-	}
-	this._theta -= this._thetaIncr;
-
-	this._ctx.save();
-	this._ctx.translate(SIZE/2, SIZE/2);
-	this._ctx.rotate(this._theta);
-	var grey;
-	var gold = [.93, .768, .439];
-	for(var i=0; i<this.frequencies.length; i++) {
-		var grey = this.frequencies[i];
-		this._ctx.fillStyle = "rgba("+Math.floor(grey*gold[0]*1.5)+", "+Math.floor(grey*gold[1]*1.5)+", "+Math.floor(grey*gold[2]*1.5)+", " + grey/255 + ")";
-		this._ctx.fillRect(i, 0, 1, 1);
 	}
 
-	this._ctx.restore();
-
-
-	this._ctxSpectrum.clearRect(0, 0, this._canvasSpectrum.width, this._canvasSpectrum.height);
-	this._ctxSpectrum.save();
-	this._ctxSpectrum.translate(SIZE/2, SIZE/2);
-	this._ctxSpectrum.rotate(-this._theta);
-	this._ctxSpectrum.translate(-SIZE/2, -SIZE/2);
-	this._ctxSpectrum.drawImage(this._canvasSave, 0, 0);
-	this._ctxSpectrum.restore();
-
-	this._ctxSpectrum.save();
-	this._ctxSpectrum.translate(SIZE/2, SIZE/2);
-	var fillStr = "rgba(" + Math.floor(gold[0] * 255) + "," + Math.floor(gold[0] * 255) + "," + Math.floor(gold[0] * 255) + ", 1.0)";
-	// console.log(this.frequencies.length);
-	for(var i=0; i<this.frequencies.length; i++) {
-		this._ctxSpectrum.fillStyle = "rgb(" + Math.floor(gold[0] * this.frequencies[i]) + "," + Math.floor(gold[1] * this.frequencies[i]) + "," + Math.floor(gold[2] * this.frequencies[i]) + ")";
-		var height = this.frequencies[i]/255;
-		if(i == 510) console.log(height);
-		this._ctxSpectrum.fillRect(i, -3, 1, -height * 20);
+	if(!this.hasFinished) {
+		this.hasFinished = this.sound.currentTime > this.sound.duration -.3;	
+		if(this.hasFinished) this._updateSpectrum(false);
 	}
-	this._ctxSpectrum.restore();
-
 	
-	this._textureSpectrum.updateTexture(this._canvasSpectrum);
+	if(!this.hasFinished) {
+		this._updateSpectrum(true);
+	}
 
-	
 	GL.setViewport(0, 0, this._fbo.width, this._fbo.height);
 	this._fbo.bind();
 	GL.clear(0, 0, 0, 0);
@@ -134,6 +105,46 @@ p.render = function() {
 	GL.rotate(this.rotationFront);
 	// this._vCopy.render(this._fbo.getTexture() );
 	this._vPost.render(this._fbo.getTexture(), this._textureBg );
+};
+
+
+p._updateSpectrum = function(drawBars) {
+	this._theta -= this._thetaIncr;
+
+	this._ctx.save();
+	this._ctx.translate(SIZE/2, SIZE/2);
+	this._ctx.rotate(this._theta);
+	var grey;
+	var gold = [.93, .768, .439];
+
+	for(var i=0; i<this.frequencies.length; i++) {
+		var grey = this.frequencies[i];
+		this._ctx.fillStyle = "rgba("+Math.floor(grey*gold[0]*1.5)+", "+Math.floor(grey*gold[1]*1.5)+", "+Math.floor(grey*gold[2]*1.5)+", " + grey/255 + ")";
+		this._ctx.fillRect(i, 0, 1, 1);
+	}
+
+	this._ctx.restore();
+	this._ctxSpectrum.clearRect(0, 0, this._canvasSpectrum.width, this._canvasSpectrum.height);
+	this._ctxSpectrum.save();
+	this._ctxSpectrum.translate(SIZE/2, SIZE/2);
+	this._ctxSpectrum.rotate(-this._theta);
+	this._ctxSpectrum.translate(-SIZE/2, -SIZE/2);
+	this._ctxSpectrum.drawImage(this._canvasSave, 0, 0);
+	this._ctxSpectrum.restore();
+
+	if(drawBars) {
+		this._ctxSpectrum.save();
+		this._ctxSpectrum.translate(SIZE/2, SIZE/2);
+		var white = [46/255, 118/255, 140/255];
+		for(var i=0; i<this.frequencies.length; i++) {
+			this._ctxSpectrum.fillStyle = "rgb(" + Math.floor(white[0] * this.frequencies[i] * 1.5) + "," + Math.floor(white[1] * this.frequencies[i] * 1.5) + "," + Math.floor(white[2] * this.frequencies[i] * 1.5) + ")";
+			var height = this.frequencies[i]/255;
+			this._ctxSpectrum.fillRect(i, -3, 1, -height * 20);
+		}
+		this._ctxSpectrum.restore();	
+	}
+	
+	this._textureSpectrum.updateTexture(this._canvasSpectrum);
 };
 
 
