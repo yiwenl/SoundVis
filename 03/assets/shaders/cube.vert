@@ -53,14 +53,9 @@ uniform vec2 waveCenter9;
 uniform float waveFront9;
 uniform float waveLength9;
 
-uniform vec3 color0;
-uniform vec3 color1;
-uniform vec3 color2;
-uniform vec3 color3;
-uniform vec3 color4;
 
 const float PI      = 3.141592653;
-const float generalWaveHeight = 10.0;
+const float generalWaveHeight = 20.0;
 varying vec3 vColor;
 
 float getWaveHeight(vec2 uv, vec2 waveCenter, float waveFront, float waveLength) {
@@ -85,31 +80,6 @@ void main(void) {
     waveHeight += getWaveHeight(uv, waveCenter9, waveFront9, waveLength9);
     pos.y += waveHeight;
     // pos.y -= generalWaveHeight * 5.0;
-
-    float blend = waveHeight;
-    vec3 c1;
-    vec3 c2;
-    float offset;
-
-    if(blend < .25) {
-        c1 = color0;
-        c2 = color1;
-        offset = blend;
-    } else if(blend < .5) {
-        c1 = color1;
-        c2 = color2;
-        offset = blend-.25;
-    } else if(blend < .75) {
-        c1 = color2;
-        c2 = color3;
-        offset = blend-.5;
-    } else {
-        c1 = color3;
-        c2 = color4;
-        offset = blend-.75;
-    } 
-
-    vColor = mix(c1, c2, offset/.25);
 
     gl_Position = uPMatrix * uMVMatrix * vec4(pos, 1.0);
 

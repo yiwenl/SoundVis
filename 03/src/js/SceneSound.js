@@ -3,6 +3,14 @@
 var GL = bongiovi.GL;
 var random = function(min, max) { return min + Math.random() * (max - min);	}
 
+var MAX_WAVES = 10;
+var params = {
+	gap:.003,
+	generalWaveHeight:.6,
+	showFullPerlinColors:false,
+	fixCenter:false
+}
+
 //	IMPORTS
 var GLTexture = bongiovi.GLTexture;
 var ViewCopy = bongiovi.ViewCopy;
@@ -22,9 +30,11 @@ function SceneSound() {
 
 	window.addEventListener("keydown", this._onKeyDown.bind(this));
 	bongiovi.Scene.call(this);
-
+	this.waves = [];
 	this.sceneRotation.lock(true);
 	this.camera.lockRotation(false);
+	this.camera.rx.value = -.3;
+	this.camera.ry.value = -.3;
 }
 
 var p = SceneSound.prototype = new bongiovi.Scene();
@@ -50,8 +60,30 @@ p._initSound = function() {
 p._initViews = function() {
 	this._vCopy   = new ViewCopy();
 	this._vCircles = new ViewCircles(this.colors);
-	this._vCubes = new ViewCubes();
-	this._vCubes.setColor(this.colors);
+	// this._vCubes = new ViewCubes(0, 0, 40, 40, 40);
+	this._cubes = [];
+
+	var num = 4;
+	var gap = 3;
+	var numInBlock = 50;
+
+	var sx = - num * numInBlock * gap * .5;
+	var sy = - num * numInBlock * gap * .5;
+	var w = numInBlock * gap;
+	var h = numInBlock * gap;
+	var tx, ty;
+	var total = num * numInBlock * gap;
+
+	for(var i=0; i<num; i++) {
+		for(var j=0; j<num; j++) {
+			tx = sx + i * w;
+			ty = sy + j * h;
+
+			var view = new ViewCubes(tx, ty, w, h, total);
+			this._cubes.push(view);
+		}
+	}
+	// this._vCubes.setColor(this.colors);
 };
 
 p._initTextures = function() {
@@ -62,7 +94,10 @@ p._initTextures = function() {
 
 p.render = function() {
 	this._getSoundData();
-	this._vCubes.render();
+	// this._vCubes.render();
+	for(var i=0; i<this._cubes.length; i++) {
+		this._cubes[i].render(this.waves);
+	}
 };
 
 
@@ -86,13 +121,33 @@ p._getSoundData = function() {
 		this.soundOffset = soundOffset;
 		console.debug("Trigger !");
 		// this._onMouseDown(null, true, soundOffset);
-		if(this._vCubes) this._vCubes.addWave(soundOffset);
+		// if(this._vCubes) this._vCubes.addWave(soundOffset);
+		// for(var i=0; i<this._cubes.length; i++) {
+		// 	this._cubes[i].addWave(soundOffset);
+		// }
+
+		this.addWave(soundOffset);
 	}
 	this.soundOffset += ( 0 - this.soundOffset ) * .01;
 	this.preSoundOffset -= .03;
 	if(this.preSoundOffset < 0 ) this.preSoundOffset = 0;
 };
 
+
+p.addWave = function(volume) {
+	var x, y;
+	y = Math.random();
+	var aspectRatio = GL.aspectRatio;
+	x = random(-aspectRatio/2, 1+aspectRatio/2);
+
+	if(params.fixCenter) x = y = .5;
+
+	var wave = new Wave().start(x, y);
+	wave.waveLength.duration *= (.5 + volume * .5);
+	this.waves.push(wave);
+
+	if(this.waves.length > MAX_WAVES) this.waves.shift();
+};
 
 p._onKeyDown = function(e) {
 	if(e.keyCode == 67) {
@@ -122,6 +177,26 @@ p._onColor = function(color) {
 	if(this._vCircles) this._vCircles.setColor(this.colors);
 	if(this._vCubes) this._vCubes.setColor(this.colors);
 };
+
+(function() {
+	var random = function(min, max) { return min + Math.random() * (max - min);	}
+
+	Wave = function() {
+		this.center = [.5, .5];
+		this.waveFront = .0;
+		this.duration = random(5000, 13000);
+		this.waveLength = random(.1, .25);
+		this.tween;
+	}
+
+	var p = Wave.prototype;
+
+	p.start = function(x, y) {
+		this.center = [x, y];
+		this.tween = new TWEEN.Tween(this).to({"waveFront":2.5}, this.duration).easing(TWEEN.Easing.Cubic.Out).start();
+		return this;
+	};
+})();
 
 
 module.exports = SceneSound;

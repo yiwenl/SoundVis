@@ -3,15 +3,22 @@ varying vec3 vNormal;
 varying vec3 vLightNormal;
 varying vec3 vVertexPosition;
 varying vec2 vTextureCoord;
-varying vec3 vColor;
 
 const vec3 lightPosition = vec3(0.0, -100.0, 0.0);
-const float lightRadius = 230.0;
+const float lightRadius = 330.0;
 const vec3 lightColor = vec3(1.0);
 const vec3 ambientColor = vec3(.3);
 const float lightWeight = 1.0;
-
 const float PI = 3.141592653;
+
+const float grey = .85;
+const vec3 lightPosBlue = vec3(1.0, 0.0, 1.0);
+const vec3 lightColorBlue = vec3(grey, grey, .95);
+const float lightBlueAmount = .5;
+
+const vec3 lightPosYellow = vec3(-1.0, 0.0, -1.0);
+const vec3 lightColorYellow = vec3(.95, .95, grey);
+const float lightYellowAmount = .5;
 
 
 float overlay(float base, float blend) {
@@ -41,6 +48,13 @@ void main(void) {
 	float attenuation = sin((1.0 - dist / lightRadius) * PI * .5);
 	float lightAmount = max(0.0, dot(normalize(relatePos), vNormal));
 	color += lightColor * lightAmount * lightWeight * attenuation;
+
+	//	DIRECTIONAL LIGHTS
+	float lightWeightBlue = max(0.0, dot(normalize(lightPosBlue), vLightNormal));
+	color += lightWeightBlue * lightBlueAmount * lightColorBlue;
+
+	float lightWeightYellow = max(0.0, dot(normalize(lightPosYellow), vLightNormal));
+	color += lightWeightYellow * lightYellowAmount * lightColorYellow;
 
     gl_FragColor = vec4(color, 1.0);
     // gl_FragColor = vec4(vLightNormal*.5 + .5, 1.0);
