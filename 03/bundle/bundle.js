@@ -120,8 +120,10 @@ p._initViews = function() {
 	this._cubes = [];
 
 	var num = 4;
-	var gap = 3;
+	var gap = 2;
 	var numInBlock = 50;
+
+	console.log("Total Blocks : ", (num*num*numInBlock));
 
 	var sx = - num * numInBlock * gap * .5;
 	var sy = - num * numInBlock * gap * .5;
@@ -136,6 +138,7 @@ p._initViews = function() {
 			ty = sy + j * h;
 
 			var view = new ViewCubes(tx, ty, w, h, total);
+			view.setColor(this.colors);
 			this._cubes.push(view);
 		}
 	}
@@ -175,13 +178,6 @@ p._getSoundData = function() {
 	if(soundOffset - this.preSoundOffset > beatThreshold) {
 		this.preSoundOffset = soundOffset;
 		this.soundOffset = soundOffset;
-		console.debug("Trigger !");
-		// this._onMouseDown(null, true, soundOffset);
-		// if(this._vCubes) this._vCubes.addWave(soundOffset);
-		// for(var i=0; i<this._cubes.length; i++) {
-		// 	this._cubes[i].addWave(soundOffset);
-		// }
-
 		this.addWave(soundOffset);
 	}
 	this.soundOffset += ( 0 - this.soundOffset ) * .01;
@@ -230,8 +226,18 @@ p._onColor = function(color) {
 		this.colors[i] = getHex(color.colors[i]);
 	}
 
-	if(this._vCircles) this._vCircles.setColor(this.colors);
-	if(this._vCubes) this._vCubes.setColor(this.colors);
+	// if(this._vCircles) this._vCircles.setColor(this.colors);
+	// if(this._vCubes) this._vCubes.setColor(this.colors);
+
+	this.colors = shuffle(this.colors);
+	for(var i=0; i<this._cubes.length; i++) {
+		this._cubes[i].setColor(this.colors);
+	}
+};
+
+function shuffle(o){ //v1.0
+    for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+    return o;
 };
 
 (function() {
@@ -357,7 +363,7 @@ module.exports = ViewCircles;
 
 var GL = bongiovi.GL;
 var gl;
-var gap = 3;
+var gap = 2;
 var size = gap*.5-.0;
 var numBlocks = 50;
 
@@ -576,9 +582,9 @@ p.render = function(waves) {
 		}
 	}
 
-	// for(var i=0; i<this._colors.length; i++) {
-	// 	this.shader.uniform("color"+i, "uniform3fv", this._colors[i]);
-	// }
+	for(var i=0; i<this._colors.length; i++) {
+		this.shader.uniform("color"+i, "uniform3fv", this._colors[i]);
+	}
 
 	// texture.bind(0);
 	GL.draw(this.mesh);

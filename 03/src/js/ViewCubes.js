@@ -2,7 +2,7 @@
 
 var GL = bongiovi.GL;
 var gl;
-var gap = 3;
+var gap = 2;
 var size = gap*.5-.0;
 var numBlocks = 50;
 
@@ -221,9 +221,9 @@ p.render = function(waves) {
 		}
 	}
 
-	// for(var i=0; i<this._colors.length; i++) {
-	// 	this.shader.uniform("color"+i, "uniform3fv", this._colors[i]);
-	// }
+	for(var i=0; i<this._colors.length; i++) {
+		this.shader.uniform("color"+i, "uniform3fv", this._colors[i]);
+	}
 
 	// texture.bind(0);
 	GL.draw(this.mesh);
