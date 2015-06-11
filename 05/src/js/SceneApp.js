@@ -5,6 +5,7 @@ var ViewCircles = require("./ViewCircles");
 
 function SceneApp() {
 	gl = GL.gl;
+
 	this._initSound();
 	bongiovi.Scene.call(this);
 }
@@ -30,24 +31,28 @@ p._initSound = function() {
 };
 
 p._initTextures = function() {
-	this.canvasSpectrum = document.createElement("canvas");
-	this.canvasSpectrum.width = this.canvasSpectrum.height = 256;
-
-	document.body.appendChild(this.canvasSpectrum);
-	this.ctx = this.canvasSpectrum.getContext("2d");
+	this.canvasSpectrum           = document.createElement("canvas");
+	this.canvasSpectrum.width     = this.canvasSpectrum.height = 128;
+	this.canvasSpectrum.className = "Spectrum-canvas";
+	this.ctx                      = this.canvasSpectrum.getContext("2d");
+	this.ctx.clearRect(0, 0, this.canvasSpectrum.width, this.canvasSpectrum.height);
 
 	this._textureSpectrum = new bongiovi.GLTexture(this.canvasSpectrum);
 };
 
 p._initViews = function() {
 	console.log('Init Views');
-	this._vCircles = new ViewCircles();
+	this._vCircles = new ViewCircles(1, .75);
+	this._vCirclesThick = new ViewCircles(3, 1);
 };
 
 p.render = function() {
 	this._getSoundData();
 
-	this._vCircles.render();
+	gl.lineWidth(1.0);
+	this._vCircles.render(this._textureSpectrum);
+	gl.lineWidth(2.0);
+	this._vCirclesThick.render(this._textureSpectrum);
 };
 
 
@@ -57,16 +62,13 @@ p._getSoundData = function() {
 	} else {
 		return;
 	}
-
-
 	var f = this.analyser.getFrequencies();
-	// console.log(f.length);
-	//	update texture here
 
 	this.ctx.drawImage(this.canvasSpectrum, 0, 1);
 	var imgData = this.ctx.getImageData(0, 0, this.canvasSpectrum.width, this.canvasSpectrum.height);
 	var pixels = imgData.data;
-	// console.log(pixels.length);
+
+	// console.log(f.length);
 
 	for(var i=0; i<f.length; i++) {
 		var index = i * 4;
@@ -79,9 +81,11 @@ p._getSoundData = function() {
 
 	this.ctx.putImageData(imgData, 0, 0);
 
-	
-
 	this._textureSpectrum.updateTexture(this.canvasSpectrum);
+};
+
+p.resize = function() {
+	this.camera.resize(GL.aspectRatio);
 };
 
 module.exports = SceneApp;

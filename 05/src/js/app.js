@@ -21,6 +21,7 @@ var dat         = require("dat-gui");
 		this.canvas = document.createElement("canvas");
 		this.canvas.width = window.innerWidth * 2;
 		this.canvas.height = window.innerHeight * 2;
+		this.canvas.className = "Main-canvas";
 		document.body.appendChild(this.canvas);
 		bongiovi.GL.init(this.canvas);
 		this.resize();
@@ -37,6 +38,7 @@ var dat         = require("dat-gui");
 
 	p.resize = function() {
 		bongiovi.GL.setSize(window.innerWidth*2, window.innerHeight*2);
+		if(this._scene) this._scene.resize();
 	};
 
 })();
