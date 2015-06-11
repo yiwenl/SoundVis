@@ -10,7 +10,21 @@ uniform sampler2D texture;
 varying vec2 vTextureCoord;
 varying float vHeightOffset;
 
+mat4 rotationMatrix(vec3 axis, float angle)
+{
+    axis = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+    
+    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+                0.0,                                0.0,                                0.0,                                1.0);
+}
+
 const float PI = 3.141592657;
+const vec3 YAXIS = vec3(0.0, 1.0, 0.0);
 
 float rand(vec2 co){
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
@@ -32,6 +46,7 @@ void main(void) {
 	// if(uv.x < 0.0) uv.x += 1.0;
 	float height = texture2D(texture, uv).r * 1.5;
 	vec3 pos = aVertexPosition;
+	
 	pos.y += height * 50.0 * heightOffset;
     gl_Position = uPMatrix * uMVMatrix * vec4(pos, 1.0);
     vTextureCoord = aTextureCoord;

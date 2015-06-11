@@ -68,7 +68,7 @@ p.render = function(texture) {
 	this.shader.uniform("opacity", "uniform1f", this.opacity);
 	GL.draw(this.mesh);
 
-	// this.count += .01;
+	this.count += .01;
 };
 
 module.exports = ViewDots;
