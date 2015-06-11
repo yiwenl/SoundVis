@@ -12,8 +12,14 @@ varying float vHeightOffset;
 
 const float PI = 3.141592657;
 
+float rand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
 void main(void) {
 	vec2 uv = aTextureCoord;
+	uv.x -= count;
+	uv.x = mod(uv.x, 1.0);
 	if(uv.x > .5) uv.x = 1.0 - uv.x;
 	// uv.x *= .65;
 	// float heightOffset = sin(uv.y*PI*.5);
@@ -31,4 +37,6 @@ void main(void) {
     vTextureCoord = aTextureCoord;
 
     vHeightOffset = heightOffset*height;
+
+    gl_PointSize = 1.0 + 3.0 * rand(uv);
 }

@@ -2,6 +2,7 @@
 
 var GL = bongiovi.GL, gl;
 var ViewCircles = require("./ViewCircles");
+var ViewDots = require("./ViewDots");
 
 function SceneApp() {
 	gl = GL.gl;
@@ -41,9 +42,9 @@ p._initTextures = function() {
 };
 
 p._initViews = function() {
-	console.log('Init Views');
 	this._vCircles = new ViewCircles(1, .75);
-	this._vCirclesThick = new ViewCircles(3, 1);
+	this._vCirclesThick = new ViewCircles(4, 1);
+	this._vDots = new ViewDots();
 };
 
 p.render = function() {
@@ -53,6 +54,7 @@ p.render = function() {
 	this._vCircles.render(this._textureSpectrum);
 	gl.lineWidth(2.0);
 	this._vCirclesThick.render(this._textureSpectrum);
+	this._vDots.render(this._textureSpectrum);
 };
 
 

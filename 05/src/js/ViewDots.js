@@ -1,18 +1,17 @@
-// ViewCircles.js
+// ViewDots.js
 
 var GL = bongiovi.GL;
 var gl;
 var glslify = require("glslify");
+var random = function(min, max) { return min + Math.random() * (max - min);	};
 
-function ViewCircles(interval, opacity) {
-	this.interval = interval == undefined ? 1 : interval;
-	this.opacity = opacity;
-	// bongiovi.View.call(this, glslify("../shaders/circles.vert"), bongiovi.ShaderLibs.get("simpleColorFrag"));
+function ViewDots() {
+	this.opacity = .8;
 	bongiovi.View.call(this, glslify("../shaders/circles.vert"), glslify("../shaders/circles.frag"));
 }
 
-var p = ViewCircles.prototype = new bongiovi.View();
-p.constructor = ViewCircles;
+var p = ViewDots.prototype = new bongiovi.View();
+p.constructor = ViewDots;
 
 
 p._init = function() {
@@ -25,7 +24,8 @@ p._init = function() {
 	var numSeg = 128;
 	var r = 50;
 	var index = 0;
-
+	var range = 1.5;
+	this.interval = 1;
 
 	function getPosition(i, radius) {
 		var theta = i/numSeg * Math.PI * 2.0;
@@ -38,16 +38,21 @@ p._init = function() {
 
 	for(var i=0; i<numLines; i+=this.interval) {
 		for(var j=0; j<numSeg; j++) {
-			positions.push(getPosition(j, r));
-			coords.push([j/numSeg, 1.0-i/numSeg]);
-			indices.push(index);
-			index++;
+			if(Math.random() > .5) {
+				var pos = getPosition(j, r);
+				pos[0] += random(range, -range);
+				pos[2] += random(range, -range);
+				positions.push(pos);
+				coords.push([j/numSeg, 1.0-i/numSeg]);
+				indices.push(index);
+				index++;	
+			}
 		}
 
 		r += 1 * this.interval;
 	}
-
-	this.mesh = new bongiovi.Mesh(positions.length, indices.length, GL.gl.LINE_STRIP);
+	console.log(positions.length);
+	this.mesh = new bongiovi.Mesh(positions.length, indices.length, GL.gl.POINTS);
 	this.mesh.bufferVertex(positions);
 	this.mesh.bufferTexCoords(coords);
 	this.mesh.bufferIndices(indices);
@@ -63,7 +68,7 @@ p.render = function(texture) {
 	this.shader.uniform("opacity", "uniform1f", this.opacity);
 	GL.draw(this.mesh);
 
-	// this.count += 1/128;
+	// this.count += .01;
 };
 
-module.exports = ViewCircles;
+module.exports = ViewDots;
