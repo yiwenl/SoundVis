@@ -46,7 +46,8 @@ void main(void) {
 	// if(uv.x < 0.0) uv.x += 1.0;
 	float height = texture2D(texture, uv).r * 1.5;
 	vec3 pos = aVertexPosition;
-	
+	mat4 rot = rotationMatrix(YAXIS, -count*PI*2.0);
+	pos = (rot * vec4(pos, 1.0)).xyz;
 	pos.y += height * 50.0 * heightOffset;
     gl_Position = uPMatrix * uMVMatrix * vec4(pos, 1.0);
     vTextureCoord = aTextureCoord;
