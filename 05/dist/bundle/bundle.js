@@ -4528,13 +4528,25 @@ p._getSoundData = function() {
 
 	var f = this.analyser.getFrequencies();
 	// console.log(f.length);
-	// for(var i=0; i<f.length; i++) {
-	// 	soundOffset += f[i];	
-	// }
-
 	//	update texture here
 
 	this.ctx.drawImage(this.canvasSpectrum, 0, 1);
+	var imgData = this.ctx.getImageData(0, 0, this.canvasSpectrum.width, this.canvasSpectrum.height);
+	var pixels = imgData.data;
+	// console.log(pixels.length);
+
+	for(var i=0; i<f.length; i++) {
+		var index = i * 4;
+		pixels[index  ] = f[i];
+		pixels[index+1] = f[i];
+		pixels[index+2] = f[i];
+		pixels[index+3] = 255;
+	}
+
+
+	this.ctx.putImageData(imgData, 0, 0);
+
+	
 
 	this._textureSpectrum.updateTexture(this.canvasSpectrum);
 };
