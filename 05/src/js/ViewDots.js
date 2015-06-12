@@ -7,7 +7,7 @@ var random = function(min, max) { return min + Math.random() * (max - min);	};
 
 function ViewDots() {
 	this.opacity = .8;
-	bongiovi.View.call(this, glslify("../shaders/circles.vert"), glslify("../shaders/circles.frag"));
+	bongiovi.View.call(this, glslify("../shaders/circleDots.vert"), glslify("../shaders/circleDots.frag"));
 }
 
 var p = ViewDots.prototype = new bongiovi.View();
@@ -15,16 +15,17 @@ p.constructor = ViewDots;
 
 
 p._init = function() {
-	this.count = 0;
-	gl = GL.gl;
+	this.count    = 0;
+	gl            = GL.gl;
 	var positions = [];
-	var coords = [];
-	var indices = []; 
-	var numLines = 80;
-	var numSeg = 128;
-	var r = 50;
-	var index = 0;
-	var range = 1.5;
+	var coords    = [];
+	var indices   = []; 
+	var extra     = [];
+	var numLines  = 80;
+	var numSeg    = 128;
+	var r         = 50;
+	var index     = 0;
+	var range     = 2.0;
 	this.interval = 1;
 
 	function getPosition(i, radius) {
@@ -43,6 +44,7 @@ p._init = function() {
 				pos[0] += random(range, -range);
 				pos[2] += random(range, -range);
 				positions.push(pos);
+				extra.push([random(1, 3), random(1, 5)]);
 				coords.push([j/numSeg, 1.0-i/numSeg]);
 				indices.push(index);
 				index++;	
@@ -56,6 +58,7 @@ p._init = function() {
 	this.mesh.bufferVertex(positions);
 	this.mesh.bufferTexCoords(coords);
 	this.mesh.bufferIndices(indices);
+	this.mesh.bufferData(extra, "aExtra", 2);
 };
 
 p.render = function(texture) {
@@ -68,7 +71,7 @@ p.render = function(texture) {
 	this.shader.uniform("opacity", "uniform1f", this.opacity);
 	GL.draw(this.mesh);
 
-	this.count += .0002;
+	this.count += .0001;
 };
 
 module.exports = ViewDots;

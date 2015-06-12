@@ -20,7 +20,7 @@ p._initSound = function() {
 	this.soundOffset = 0;
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
-	    url: ['assets/audio/01.mp3'],
+	    url: ['assets/audio/02.mp3'],
 	    volume: 1.0,
 	    loop: true,
 	    onComplete: function(sound) {
@@ -49,6 +49,7 @@ p._initViews = function() {
 
 p.render = function() {
 	this._getSoundData();
+	GL.clear(13/255, 15/255, 20/255, 1);
 
 	gl.lineWidth(1.0);
 	this._vCircles.render(this._textureSpectrum);

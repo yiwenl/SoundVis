@@ -1,6 +1,7 @@
 precision highp float;
 attribute vec3 aVertexPosition;
 attribute vec2 aTextureCoord;
+attribute vec2 aExtra;
 
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
@@ -32,7 +33,8 @@ float rand(vec2 co){
 
 void main(void) {
 	vec2 uv = aTextureCoord;
-	uv.x -= count;
+	float finalCount = count * aExtra.x;
+	uv.x -= finalCount;
 	uv.x = mod(uv.x, 1.0);
 	if(uv.x > .5) uv.x = 1.0 - uv.x;
 	// uv.x *= .65;
@@ -46,11 +48,13 @@ void main(void) {
 	// if(uv.x < 0.0) uv.x += 1.0;
 	float height = texture2D(texture, uv).r * 1.5;
 	vec3 pos = aVertexPosition;
-	mat4 rot = rotationMatrix(YAXIS, -count*PI*2.0);
+	mat4 rot = rotationMatrix(YAXIS, -finalCount*PI*2.0);
 	pos = (rot * vec4(pos, 1.0)).xyz;
 	pos.y += height * 50.0 * heightOffset;
     gl_Position = uPMatrix * uMVMatrix * vec4(pos, 1.0);
     vTextureCoord = aTextureCoord;
 
     vHeightOffset = heightOffset*height;
+
+    gl_PointSize = aExtra.y;
 }
