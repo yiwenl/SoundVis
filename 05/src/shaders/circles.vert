@@ -30,20 +30,20 @@ float rand(vec2 co){
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
+float map(float value, float sx, float sy, float tx, float ty) {
+	float p = (value - sx) / ( sy - sx);
+	return p * (ty - tx) + tx;
+}
+
 void main(void) {
 	vec2 uv = aTextureCoord;
 	uv.x -= count;
 	uv.x = mod(uv.x, 1.0);
+
 	if(uv.x > .5) uv.x = 1.0 - uv.x;
-	// uv.x *= .65;
-	// float heightOffset = sin(uv.y*PI*.5);
 	float heightOffset = uv.y;
 
 	heightOffset = pow(heightOffset, 4.0) + .1;
-
-
-	// uv.y = mod(uv.y, 1.0);
-	// if(uv.x < 0.0) uv.x += 1.0;
 	float height = texture2D(texture, uv).r * 1.5;
 	vec3 pos = aVertexPosition;
 	mat4 rot = rotationMatrix(YAXIS, -count*PI*2.0);

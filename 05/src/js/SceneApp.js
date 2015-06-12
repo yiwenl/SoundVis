@@ -3,10 +3,11 @@
 var GL = bongiovi.GL, gl;
 var ViewCircles = require("./ViewCircles");
 var ViewDots = require("./ViewDots");
+var ViewGround = require("./ViewGround");
 
 function SceneApp() {
 	gl = GL.gl;
-
+	this.sum = 0;
 	this._initSound();
 	bongiovi.Scene.call(this);
 }
@@ -20,7 +21,7 @@ p._initSound = function() {
 	this.soundOffset = 0;
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
-	    url: ['assets/audio/02.mp3'],
+	    url: ['assets/audio/03.mp3'],
 	    volume: 1.0,
 	    loop: true,
 	    onComplete: function(sound) {
@@ -42,9 +43,10 @@ p._initTextures = function() {
 };
 
 p._initViews = function() {
-	this._vCircles = new ViewCircles(1, .75);
+	this._vCircles      = new ViewCircles(1, .75);
 	this._vCirclesThick = new ViewCircles(4, 1);
-	this._vDots = new ViewDots();
+	this._vDots         = new ViewDots();
+	this._vGround       = new ViewGround();
 };
 
 p.render = function() {
@@ -56,6 +58,8 @@ p.render = function() {
 	gl.lineWidth(2.0);
 	this._vCirclesThick.render(this._textureSpectrum);
 	this._vDots.render(this._textureSpectrum);
+
+	this._vGround.render(this.sum);
 };
 
 
@@ -72,6 +76,7 @@ p._getSoundData = function() {
 	var pixels = imgData.data;
 
 	// console.log(f.length);
+	var sum = 0;
 
 	for(var i=0; i<f.length; i++) {
 		var index = i * 4;
@@ -79,9 +84,12 @@ p._getSoundData = function() {
 		pixels[index+1] = f[i];
 		pixels[index+2] = f[i];
 		pixels[index+3] = 255;
+		sum += f[i];
 	}
 
 
+	sum /= f.length;
+	this.sum = Math.min(sum, 120) / 120;
 	this.ctx.putImageData(imgData, 0, 0);
 
 	this._textureSpectrum.updateTexture(this.canvasSpectrum);
