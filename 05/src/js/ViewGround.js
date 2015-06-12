@@ -45,7 +45,7 @@ p.render = function(sum) {
 	// texture.bind(0);
 
 	this.shader.uniform("color", "uniform3fv", [0, 0, 0]);
-	this.shader.uniform("alpha", "uniform1f", .01 + sum * .1);
+	this.shader.uniform("alpha", "uniform1f", sum * .075);
 	this.shader.uniform("range", "uniform1f", sum * .3);
 	GL.draw(this.mesh);
 };

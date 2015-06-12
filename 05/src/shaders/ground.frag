@@ -19,7 +19,8 @@ void main(void) {
 		grey = 0.0;
 	} else if(d > RADIUS) {
 		float p = (d - RADIUS) / _RANGE;
-		p = cos(PI * p);
+		// p = cos(PI * p);
+		p = 1.0-sin(PI * p * .5);
 		grey *= pow(p, 3.0);
 	}
 

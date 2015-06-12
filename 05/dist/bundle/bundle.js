@@ -95,7 +95,7 @@ p._initViews = function() {
 	this._vCircles      = new ViewCircles(1, .75);
 	this._vCirclesThick = new ViewCircles(4, 1);
 	this._vDots         = new ViewDots();
-	this._vGround       = new ViewGround();
+	// this._vGround       = new ViewGround();
 };
 
 p.render = function() {
@@ -108,7 +108,7 @@ p.render = function() {
 	this._vCirclesThick.render(this._textureSpectrum);
 	this._vDots.render(this._textureSpectrum);
 
-	this._vGround.render(this.sum);
+	// this._vGround.render(this.sum);
 };
 
 
@@ -275,7 +275,7 @@ p._init = function() {
 
 		r += 1 * this.interval;
 	}
-	console.log(positions.length);
+	
 	this.mesh = new bongiovi.Mesh(positions.length, indices.length, GL.gl.POINTS);
 	this.mesh.bufferVertex(positions);
 	this.mesh.bufferTexCoords(coords);
@@ -306,7 +306,7 @@ var gl;
 
 function ViewGround() {
 	// bongiovi.View.call(this, null, bongiovi.ShaderLibs.get("simpleColorFrag"));
-	bongiovi.View.call(this, null, "#define GLSLIFY 1\n\nprecision highp float;\nvarying vec2 vTextureCoord;\n\nconst vec2 center = vec2(.5);\n\nconst float RADIUS = .01;\nconst float RANGE = .3;\nconst float PI = 3.141592657;\n\nuniform float range;\nuniform float alpha;\n\nvoid main(void) {\n\tfloat d = distance(center, vTextureCoord);\n\tfloat grey = .96;\n\tfloat _RANGE = range + RANGE;\n\n\tif(d > RADIUS + _RANGE) {\n\t\tgrey = 0.0;\n\t} else if(d > RADIUS) {\n\t\tfloat p = (d - RADIUS) / _RANGE;\n\t\tp = cos(PI * p);\n\t\tgrey *= pow(p, 3.0);\n\t}\n\n    gl_FragColor = vec4(grey, grey, grey*.8, grey*alpha);\n}");
+	bongiovi.View.call(this, null, "#define GLSLIFY 1\n\nprecision highp float;\nvarying vec2 vTextureCoord;\n\nconst vec2 center = vec2(.5);\n\nconst float RADIUS = .01;\nconst float RANGE = .3;\nconst float PI = 3.141592657;\n\nuniform float range;\nuniform float alpha;\n\nvoid main(void) {\n\tfloat d = distance(center, vTextureCoord);\n\tfloat grey = .96;\n\tfloat _RANGE = range + RANGE;\n\n\tif(d > RADIUS + _RANGE) {\n\t\tgrey = 0.0;\n\t} else if(d > RADIUS) {\n\t\tfloat p = (d - RADIUS) / _RANGE;\n\t\t// p = cos(PI * p);\n\t\tp = 1.0-sin(PI * p * .5);\n\t\tgrey *= pow(p, 3.0);\n\t}\n\n    gl_FragColor = vec4(grey, grey, grey*.8, grey*alpha);\n}");
 }
 
 var p = ViewGround.prototype = new bongiovi.View();
@@ -345,7 +345,7 @@ p.render = function(sum) {
 	// texture.bind(0);
 
 	this.shader.uniform("color", "uniform3fv", [0, 0, 0]);
-	this.shader.uniform("alpha", "uniform1f", .01 + sum * .1);
+	this.shader.uniform("alpha", "uniform1f", sum * .075);
 	this.shader.uniform("range", "uniform1f", sum * .3);
 	GL.draw(this.mesh);
 };

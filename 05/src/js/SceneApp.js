@@ -46,7 +46,7 @@ p._initViews = function() {
 	this._vCircles      = new ViewCircles(1, .75);
 	this._vCirclesThick = new ViewCircles(4, 1);
 	this._vDots         = new ViewDots();
-	this._vGround       = new ViewGround();
+	// this._vGround       = new ViewGround();
 };
 
 p.render = function() {
@@ -59,7 +59,7 @@ p.render = function() {
 	this._vCirclesThick.render(this._textureSpectrum);
 	this._vDots.render(this._textureSpectrum);
 
-	this._vGround.render(this.sum);
+	// this._vGround.render(this.sum);
 };
 
 

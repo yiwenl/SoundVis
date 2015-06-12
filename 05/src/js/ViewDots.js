@@ -53,7 +53,7 @@ p._init = function() {
 
 		r += 1 * this.interval;
 	}
-	console.log(positions.length);
+	
 	this.mesh = new bongiovi.Mesh(positions.length, indices.length, GL.gl.POINTS);
 	this.mesh.bufferVertex(positions);
 	this.mesh.bufferTexCoords(coords);
