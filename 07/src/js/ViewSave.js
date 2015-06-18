@@ -27,8 +27,8 @@ p._init = function() {
 	var x, y, z, u, v, range = 100;
 	for( var i=0; i<this._totalParticles; i++) {
 		x = random(0, Math.PI * 2);
-		y = random(0, range);
-		z = random(5, 100);
+		y = random(0, 400);
+		z = random(0, 150);
 
 		u = (i % this._numParticles) / this._numParticles;
 		u -= .5;
