@@ -74,6 +74,10 @@ float snoise(float x, float y, float z){
 	return snoise(vec3(x, y, z));
 }
 
+float rand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
 vec3 getPosition(vec3 color) {
 	float theta = color.x;
 	float y = color.y;
@@ -94,7 +98,7 @@ void main(void) {
 		vec3 pos = texture2D(texture, vTextureCoord).rgb;
 		pos += vel;
 		if(pos.y > MAX_HEIGHT) {
-			pos.y = 0.00;
+			pos.y -= MAX_HEIGHT;
 		}
 		gl_FragColor = vec4(pos, 1.00);
 	} else {
@@ -113,8 +117,9 @@ void main(void) {
 		if(vel.y < 0.00) vel.y = 0.00;
 
 		vec3 newPos = getPosition(pos + vel);
-		if(newPos.y > MAX_HEIGHT) {
+		if(newPos.y >= MAX_HEIGHT) {
 			vel.xy *= 0.0;
+			// vel.z = (rand(vTextureCoord+time) + 1.0) * 75.0;
 		}
 	
 		gl_FragColor = vec4(vel, 1.00);

@@ -4,11 +4,13 @@ var GL = bongiovi.GL, gl;
 var ViewSave = require("./ViewSave");
 var ViewRender = require("./ViewRender");
 var ViewSimulation = require("./ViewSimulation");
+var ViewSkip = require("./ViewSkip");
 
 function SceneApp() {
 	gl = GL.gl;
 	this.sum = 0;
 	this._initSound();
+	this.count = 0;
 	bongiovi.Scene.call(this);
 }
 
@@ -46,6 +48,7 @@ p._initViews = function() {
 	this._vRender = new ViewRender(params.numParticles);
 	this._vCopy = new bongiovi.ViewCopy();
 	this._vSim = new ViewSimulation();
+	this._vSkip = new ViewSkip();
 
 
 	this._fboCurrent.bind();
@@ -67,9 +70,14 @@ p.render = function() {
 	GL.setViewport(0, 0, this._fboCurrent.width, this._fboCurrent.height);
 	this._fboTarget.bind();
 	GL.clear(0, 0, 0, 0);
-	this._vSim.render(this._fboCurrent.getTexture());
+	if(this.count++ % 5 == 0) {
+		this._vSim.render(this._fboCurrent.getTexture());
+	} else {
+		this._vSkip.render(this._fboCurrent.getTexture());
+	}
+	
 	this._fboTarget.unbind();
-	this._vCopy.render(this._fboTarget.getTexture());
+	// this._vCopy.render(this._fboTarget.getTexture());
 
 	GL.setMatrices(this.camera);
 	GL.rotate(this.sceneRotation.matrix);
