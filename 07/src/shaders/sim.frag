@@ -88,7 +88,7 @@ vec3 getPosition(vec3 color) {
 }
 
 const float posOffset = 0.01;
-const float MAX_ROTATION_SPEED = 0.03;
+const float MAX_ROTATION_SPEED = 0.02;
 const float MAX_RISING_SPEED = 0.30;
 const float MAX_HEIGHT = 400.00;
 const float MAX_RADIUS = 150.0;
@@ -116,7 +116,7 @@ void main(void) {
 		vec3 pos = getPosition(colorPos);
 		vec3 vel = texture2D(texture, vTextureCoord).rgb;
 		float ax = snoise(pos.x * posOffset + time, pos.y * posOffset + time, pos.z * posOffset + time) + 0.50;
-		vel.x += ax * pow(0.1, 4.00);
+		vel.x += ax * pow(0.1, 2.01);
 		if(vel.x > MAX_ROTATION_SPEED) vel.x = MAX_ROTATION_SPEED;
 		if(vel.x < 0.00) vel.x = 0.00;
 
@@ -126,14 +126,15 @@ void main(void) {
 		if(vel.y < 0.00) vel.y -= vel.y * .2;
 
 		float az = snoise(pos.z * posOffset + time, pos.x * posOffset + time, pos.y * posOffset + time) + 0.5;
-		vel.z += az * pow(.1, 3.00);
+		vel.z += az * pow(.1, 1.72);
+
 		float mRadius = 1.0 - pos.y/MAX_HEIGHT;
 		mRadius = tan(mRadius * PI * .5 * .5);
 		float rx = snoise(pos.y * posOffset, time*10.0, time*2.0) + 0.49;
-		mRadius = (.02 + mRadius * .98) + rx * 70.0 * (mRadius * .25 + .75);
+		mRadius = (.02 + mRadius * .98) + rx * 50.0 * (mRadius * .25 + .75);
 		if(pos.z > mRadius) {
-			vel.z -= (pos.z - mRadius) * pow(.1, 3.5);
-		} else if(pos.z <= 0.0) {
+			vel.z -= (pos.z - mRadius) * pow(.1, 3.13);
+		} else if(pos.z <= 10.0) {
 			vel.z = (rand(vTextureCoord * time)+1.0) * .001;
 		}
 

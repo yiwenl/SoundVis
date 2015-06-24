@@ -29,7 +29,7 @@ p._initSound = function() {
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
 	    url: ['assets/audio/03.mp3'],
-	    volume: 0.2,
+	    volume: 0.002,
 	    loop: true,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded");
