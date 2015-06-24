@@ -1,7 +1,7 @@
 precision mediump float;
 varying vec2 vTextureCoord;
 
-uniform sampler2D texture;
+uniform sampler2D textureSpectrum;
 
 float map(float value, float sx, float sy, float tx, float ty) {
 	float p = (value - sx) / ( sy - sx);
@@ -55,8 +55,19 @@ void main(void) {
 	// grey *= waveOffset*.5 + .5;
 	grey *= mix(waveOffset, 1.0, 1.0-soundOffset*.65);
 
+	float theta = atan(vTextureCoord.y - center.y, vTextureCoord.x - center.x);
+
+	float maxDist = length(center);
+
+	dist = maxDist-distance(vTextureCoord, center);
+	uv = vec2(theta/PI/2.0, dist);
+	vec3 colorCircleSpectrum = texture2D(textureSpectrum, uv).rgb;
+	colorCircleSpectrum *= soundOffset;
+
 	vec3 color = vec3(grey);
 
 	gl_FragColor = vec4(vec3(grey), 1.0);
+	// gl_FragColor = texture2D(textureSpectrum, uv);
+	gl_FragColor = vec4(colorCircleSpectrum, 1.0);
 
 }
