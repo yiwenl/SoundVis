@@ -4467,7 +4467,7 @@ var ViewPlane = require("./ViewPlane");
 
 function SceneApp() {
 	gl = GL.gl;
-	this.sum = new bongiovi.EaseNumber(0, .5);
+	this.sum = new bongiovi.EaseNumber(0, .15);
 	bongiovi.Scene.call(this);
 
 	this._initSound();
@@ -4491,7 +4491,7 @@ p._initSound = function() {
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
 	    url: ['assets/audio/03.mp3'],
-	    volume: 0.002,
+	    volume: 0.05,
 	    loop: true,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded");
@@ -4571,7 +4571,7 @@ var gl;
 
 function ViewNoise() {
 	this.count = Math.random() * 0xFF;
-	bongiovi.View.call(this, null, "#define GLSLIFY 1\n\nprecision mediump float;\nvarying vec2 vTextureCoord;\n\nuniform sampler2D texture;\n\nfloat map(float value, float sx, float sy, float tx, float ty) {\n\tfloat p = (value - sx) / ( sy - sx);\n\treturn tx + p * ( ty - tx);\n}\n\n\nfloat hash( vec2 p ) {\n\tfloat h = dot(p,vec2(127.1,311.7)); \n\treturn fract(sin(h)*43758.5453123);\n}\n\nfloat noise( in vec2 p ) {\n\tvec2 i = floor( p );\n\tvec2 f = fract( p );    \n\tvec2 u = f*f*(3.0-2.0*f);\n\treturn -1.0+2.0*mix( mix( hash( i + vec2(0.0,0.0) ), \n\t\t\t\t\t hash( i + vec2(1.0,0.0) ), u.x),\n\t\t\t\tmix( hash( i + vec2(0.0,1.0) ), \n\t\t\t\t\t hash( i + vec2(1.0,1.0) ), u.x), u.y);\n}\n\nconst float RX = 1.6;\nconst float RY = 1.2;\nconst mat2 rotation = mat2(RX,RY,-RY,RX);\nconst int NUM_ITER = 10;\nconst float PI = 3.141592657;\nuniform float time;\nuniform float soundOffset;\n\nconst vec2 center = vec2(.5);\n\n\nvoid main(void) {   \n\tfloat offset = 5.000 + soundOffset * 2.0;\n\tvec2 uv = vTextureCoord * (soundOffset + 1.0);\n\tfloat grey = 0.0;\n\n\tfloat scale = 0.5;\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\tgrey += noise(uv*offset+time) * scale;\n\t\toffset *= 1.5 + soundOffset * 1.0;\n\t\tscale *= 0.22 * (1.0 + soundOffset * 1.0);\n\t\tuv *= rotation;\n\t}\n\n\tfloat dist = distance(vTextureCoord, center) - time*.1;\n\tfloat waveOffset = (sin(dist * 50.0 + soundOffset * 150.0) + 1.0) * .5;\n\n\tgrey = (grey + 1.0) * 0.5;\n\t// grey *= waveOffset*.5 + .5;\n\tgrey *= mix(waveOffset, 1.0, 1.0-soundOffset*.65);\n\n\tvec3 color = vec3(grey);\n\n\tgl_FragColor = vec4(vec3(grey), 1.0);\n\n}");
+	bongiovi.View.call(this, null, "#define GLSLIFY 1\n\nprecision mediump float;\nvarying vec2 vTextureCoord;\n\nuniform sampler2D texture;\n\nfloat map(float value, float sx, float sy, float tx, float ty) {\n\tfloat p = (value - sx) / ( sy - sx);\n\treturn tx + p * ( ty - tx);\n}\n\n\nfloat hash( vec2 p ) {\n\tfloat h = dot(p,vec2(127.1,311.7)); \n\treturn fract(sin(h)*43758.5453123);\n}\n\nfloat noise( in vec2 p ) {\n\tvec2 i = floor( p );\n\tvec2 f = fract( p );    \n\tvec2 u = f*f*(3.0-2.0*f);\n\treturn -1.0+2.0*mix( mix( hash( i + vec2(0.0,0.0) ), \n\t\t\t\t\t hash( i + vec2(1.0,0.0) ), u.x),\n\t\t\t\tmix( hash( i + vec2(0.0,1.0) ), \n\t\t\t\t\t hash( i + vec2(1.0,1.0) ), u.x), u.y);\n}\n\nconst float RX = 1.6;\nconst float RY = 1.2;\nconst mat2 rotation = mat2(RX,RY,-RY,RX);\nconst int NUM_ITER = 10;\nconst float PI = 3.141592657;\nuniform float time;\nuniform float soundOffset;\n\nconst vec2 center = vec2(.5);\n\n\nvoid main(void) {   \n\tfloat offset = 5.000 + soundOffset * 2.0;\n\tvec2 uv = vTextureCoord * (soundOffset + 1.0);\n\tfloat grey = 0.0;\n\n\tfloat scale = 0.5;\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\tgrey += noise(uv*offset+time) * scale;\n\t\toffset *= 1.5 + soundOffset * 1.0;\n\t\tscale *= 0.22 * (1.0 + soundOffset * .25);\n\t\tuv *= rotation;\n\t}\n\n\tfloat dist = distance(vTextureCoord, center) - time*.1;\n\tfloat waveOffset = (sin(dist * 50.0 + soundOffset * 150.0) + 1.0) * .5;\n\n\tgrey = (grey + 1.0) * 0.5;\n\t// grey *= waveOffset*.5 + .5;\n\tgrey *= mix(waveOffset, 1.0, 1.0-soundOffset*.65);\n\n\tvec3 color = vec3(grey);\n\n\tgl_FragColor = vec4(vec3(grey), 1.0);\n\n}");
 }
 
 var p = ViewNoise.prototype = new bongiovi.View();

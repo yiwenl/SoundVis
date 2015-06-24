@@ -44,7 +44,7 @@ void main(void) {
 	for(int i=0; i<NUM_ITER; i++) {
 		grey += noise(uv*offset+time) * scale;
 		offset *= 1.5 + soundOffset * 1.0;
-		scale *= 0.22 * (1.0 + soundOffset * 1.0);
+		scale *= 0.22 * (1.0 + soundOffset * .25);
 		uv *= rotation;
 	}
 

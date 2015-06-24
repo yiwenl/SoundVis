@@ -6,7 +6,7 @@ var ViewPlane = require("./ViewPlane");
 
 function SceneApp() {
 	gl = GL.gl;
-	this.sum = new bongiovi.EaseNumber(0, .5);
+	this.sum = new bongiovi.EaseNumber(0, .15);
 	bongiovi.Scene.call(this);
 
 	this._initSound();
@@ -30,7 +30,7 @@ p._initSound = function() {
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
 	    url: ['assets/audio/03.mp3'],
-	    volume: 0.002,
+	    volume: 0.05,
 	    loop: true,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded");
