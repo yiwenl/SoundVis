@@ -4622,7 +4622,7 @@ var gl;
 
 
 function ViewPlane() {
-	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// plane.vert\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\nuniform sampler2D texture;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vColor;\n\nvoid main(void) {\n    vec3 pos = aVertexPosition;\n\n    vec4 color = texture2D(texture, aTextureCoord);\n    pos.y += color.r * 20.0;\n    gl_Position = uPMatrix * uMVMatrix * vec4(pos, 1.0);\n\n    vTextureCoord = aTextureCoord;\n\n    vColor = vec3(color.r);\n}\n", "#define GLSLIFY 1\n\n// plane.frag\n\nprecision highp float;\n\nvarying vec3 vColor;\n\nvoid main(void) {\n\tgl_FragColor = vec4(vColor, 1.0);\n}");
+	bongiovi.View.call(this, "#define GLSLIFY 1\n\n// plane.vert\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\nuniform sampler2D texture;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\n\nvarying vec2 vTextureCoord;\nvarying vec3 vColor;\n\n\n//float n = 5.0;\n//float f = 800.0;\n\t\nfloat getDepth(float z, float n, float f) {\n\treturn (2.0 * n) / (f + n - z*(f-n));\n}\n\nvoid main(void) {\n    vec3 pos = aVertexPosition;\n\n    vec4 color = texture2D(texture, aTextureCoord);\n    pos.y += color.r * 20.0;\n\n    vec4 V = uPMatrix * uMVMatrix * vec4(pos, 1.0);\n    gl_Position = V;\n\n    float depth = 1.0-getDepth(V.z / V.w, 5.0, 800.0);\n\n    vTextureCoord = aTextureCoord;\n\n    vColor = vec3(color.r * depth);\n}\n", "#define GLSLIFY 1\n\n// plane.frag\n\nprecision highp float;\n\nvarying vec3 vColor;\n\nvoid main(void) {\n\tgl_FragColor = vec4(vColor, 1.0);\n}");
 	// bongiovi.View.call(this);
 }
 
