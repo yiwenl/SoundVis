@@ -3,6 +3,7 @@ precision highp float;
 uniform sampler2D texture;
 uniform float time;
 uniform float numParticles;
+uniform float soundOffset;
 varying vec2 vTextureCoord;
 
 
@@ -87,9 +88,11 @@ vec3 getPosition(vec3 color) {
 }
 
 const float posOffset = 0.01;
-const float MAX_ROTATION_SPEED = 0.05;
-const float MAX_RISING_SPEED = 0.10;
+const float MAX_ROTATION_SPEED = 0.03;
+const float MAX_RISING_SPEED = 0.30;
 const float MAX_HEIGHT = 400.00;
+const float MAX_RADIUS = 150.0;
+
 
 void main(void) {
 	if(vTextureCoord.x < 0.50) {
@@ -98,7 +101,13 @@ void main(void) {
 		vec3 pos = texture2D(texture, vTextureCoord).rgb;
 		pos += vel;
 		if(pos.y > MAX_HEIGHT) {
-			pos.y -= MAX_HEIGHT;
+			float tempo = rand(vec2(soundOffset)) + .5;
+			pos.y -= MAX_HEIGHT + tempo * 20.0;
+			pos.x = rand(vTextureCoord) * PI * 2.0;
+			pos.z = tempo * 100.0;
+		}
+		if(pos.z <0.0) {
+			pos.z = 0.0;
 		}
 		gl_FragColor = vec4(pos, 1.00);
 	} else {
@@ -111,15 +120,28 @@ void main(void) {
 		if(vel.x > MAX_ROTATION_SPEED) vel.x = MAX_ROTATION_SPEED;
 		if(vel.x < 0.00) vel.x = 0.00;
 
-		float ay = snoise(pos.y * posOffset + time, pos.z * posOffset + time, pos.x * posOffset + time) + 0.50;
+		float ay = snoise(pos.y * posOffset + time, pos.z * posOffset + time, pos.x * posOffset + time) + 0.4;
 		vel.y += ay * pow(0.10, 1.00);
 		if(vel.y > MAX_RISING_SPEED) vel.y = MAX_RISING_SPEED;
-		if(vel.y < 0.00) vel.y = 0.00;
+		if(vel.y < 0.00) vel.y -= vel.y * .2;
+
+		float az = snoise(pos.z * posOffset + time, pos.x * posOffset + time, pos.y * posOffset + time) + 0.5;
+		vel.z += az * pow(.1, 3.00);
+		float mRadius = 1.0 - pos.y/MAX_HEIGHT;
+		mRadius = tan(mRadius * PI * .5 * .5);
+		float rx = snoise(pos.y * posOffset, time*10.0, time*2.0) + 0.49;
+		mRadius = (.02 + mRadius * .98) + rx * 70.0 * (mRadius * .25 + .75);
+		if(pos.z > mRadius) {
+			vel.z -= (pos.z - mRadius) * pow(.1, 3.5);
+		} else if(pos.z <= 0.0) {
+			vel.z = (rand(vTextureCoord * time)+1.0) * .001;
+		}
+
+		vel.y *= .98;
 
 		vec3 newPos = getPosition(pos + vel);
 		if(newPos.y >= MAX_HEIGHT) {
-			vel.xy *= 0.0;
-			// vel.z = (rand(vTextureCoord+time) + 1.0) * 75.0;
+			vel *= 0.0;
 		}
 	
 		gl_FragColor = vec4(vel, 1.00);

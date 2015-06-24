@@ -18,9 +18,10 @@ p._init = function() {
 	this.mesh = bongiovi.MeshUtils.createPlane(2, 2, 1);
 };
 
-p.render = function(texture) {
+p.render = function(texture, soundOffset) {
 	this.shader.bind();
 	this.shader.uniform("time", "uniform1f", this.count);
+	this.shader.uniform("soundOffset", "uniform1f", soundOffset);
 	this.shader.uniform("texture", "uniform1i", 0);
 	texture.bind(0);
 	GL.draw(this.mesh);

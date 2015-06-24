@@ -9,7 +9,7 @@ function ViewSimulation() {
 	this.count = Math.random() * 0xFF;
 	bongiovi.View.call(this, null, glslify("../shaders/sim.frag"));
 
-	new TangledShader(gl, this.shader.fragmentShader, this._onShaderUpdate.bind(this));
+	// new TangledShader(gl, this.shader.fragmentShader, this._onShaderUpdate.bind(this));
 }
 
 var p = ViewSimulation.prototype = new bongiovi.View();
@@ -25,9 +25,11 @@ p._onShaderUpdate = function(shader) {
 	this.shader.attachShaderProgram();
 };
 
-p.render = function(texture) {
+p.render = function(texture, soundOffset) {
+	// console.log(soundOffset);
 	this.shader.bind();
 	this.shader.uniform("time", "uniform1f", this.count);
+	this.shader.uniform("soundOffset", "uniform1f", soundOffset);
 	this.shader.uniform("texture", "uniform1i", 0);
 	texture.bind(0);
 	GL.draw(this.mesh);

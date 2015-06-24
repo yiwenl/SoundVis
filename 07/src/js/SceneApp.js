@@ -8,10 +8,15 @@ var ViewSkip = require("./ViewSkip");
 
 function SceneApp() {
 	gl = GL.gl;
-	this.sum = 0;
+	this.sum = new bongiovi.EaseNumber(0, 1);
 	this._initSound();
 	this.count = 0;
 	bongiovi.Scene.call(this);
+
+	this.sceneRotation.lock(true);
+	this.camera.lockRotation(false);
+	this.camera._rx.value = -.35;
+	this.camera._ry.value = -.35;
 }
 
 
@@ -24,7 +29,7 @@ p._initSound = function() {
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
 	    url: ['assets/audio/03.mp3'],
-	    volume: 1.0,
+	    volume: 0.2,
 	    loop: true,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded");
@@ -71,9 +76,9 @@ p.render = function() {
 	this._fboTarget.bind();
 	GL.clear(0, 0, 0, 0);
 	if(this.count++ % 5 == 0) {
-		this._vSim.render(this._fboCurrent.getTexture());
+		this._vSim.render(this._fboCurrent.getTexture(), this.sum.value);
 	} else {
-		this._vSkip.render(this._fboCurrent.getTexture());
+		this._vSkip.render(this._fboCurrent.getTexture(), this.sum.value);
 	}
 	
 	this._fboTarget.unbind();
@@ -113,7 +118,7 @@ p._getSoundData = function() {
 
 
 	sum /= f.length;
-	this.sum = Math.min(sum, 120) / 120;
+	this.sum.value = Math.min(sum, 120);
 };
 
 p.resize = function() {
