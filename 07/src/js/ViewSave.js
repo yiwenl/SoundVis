@@ -37,10 +37,22 @@ p._init = function() {
 		u = u * .5 - .5;
 
 		v = Math.floor(i / this._numParticles) / this._numParticles;
-		v = (v -.5) * 2.0;
+		v -= .5;
+		v *= 2.0;
+		v += 1.0/this._numParticles;
+		v = v * .5 - .5;
 
 		positions.push([x, y, z]);
 		coords.push([u, v]);
+		indices.push(index);
+
+		index++;
+
+		var alpha = random(.5, 1);
+		var size = random(.25, 1);
+		var theta = Math.random() * Math.PI * 2.0;
+		positions.push([alpha, theta, size]);
+		coords.push([u, v+1.0]);
 		indices.push(index);
 
 		index++;

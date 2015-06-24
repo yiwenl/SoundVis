@@ -41,8 +41,8 @@ p._initSound = function() {
 
 p._initTextures = function() {
 	var pars = {minFilter:gl.NEAREST, magFilter:gl.NEAREST};
-	this._fboCurrent = new bongiovi.FrameBuffer(params.numParticles * 2, params.numParticles, pars);
-	this._fboTarget  = new bongiovi.FrameBuffer(params.numParticles * 2, params.numParticles, pars);
+	this._fboCurrent = new bongiovi.FrameBuffer(params.numParticles * 2, params.numParticles * 2, pars);
+	this._fboTarget  = new bongiovi.FrameBuffer(params.numParticles * 2, params.numParticles * 2, pars);
 
 };
 
@@ -87,8 +87,8 @@ p.render = function() {
 	GL.setMatrices(this.camera);
 	GL.rotate(this.sceneRotation.matrix);
 	GL.setViewport(0, 0, GL.width, GL.height);
-	this._vDotPlane.render();
-	this._vAxis.render();
+	// this._vDotPlane.render();
+	// this._vAxis.render();
 	this._vRender.render(this._fboCurrent.getTexture());
 
 	this.swap();
