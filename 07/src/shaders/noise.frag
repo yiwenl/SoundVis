@@ -62,7 +62,7 @@ void main(void) {
 	dist = maxDist-distance(vTextureCoord, center);
 	uv = vec2(theta/PI/2.0, dist);
 	vec3 colorCircleSpectrum = texture2D(textureSpectrum, uv).rgb;
-	colorCircleSpectrum *= soundOffset;
+	// colorCircleSpectrum *= soundOffset;
 
 	vec3 color = vec3(grey);
 

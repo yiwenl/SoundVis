@@ -106,16 +106,23 @@ p._getSoundData = function() {
 
 	for(var i=0; i<f.length; i++) {
 		var index = i * 4;
-		pixels[index  ] = f[i];
-		pixels[index+1] = f[i];
-		pixels[index+2] = f[i];
-		pixels[index+3] = 255;
 		sum += f[i];
 	}
 
 
 	sum /= f.length;
-	this.sum.value = Math.min(sum, 120);
+	sum = Math.min(sum, 120);
+	this.sum.value = sum;
+
+	var offset = Math.pow(sum/120, 2.0);
+
+	for(var i=0; i<f.length; i++) {
+		var index = i * 4;
+		pixels[index  ] = Math.floor(f[i] * offset);
+		pixels[index+1] = Math.floor(f[i] * offset);
+		pixels[index+2] = Math.floor(f[i] * offset);
+		pixels[index+3] = 255;
+	}
 
 	this.ctx.putImageData(imgData, 0, 0);
 	this._textureSpectrum.updateTexture(this.canvasSpectrum);
