@@ -56,19 +56,25 @@ void main(void) {
 
 	grey = (grey + 1.0) * 0.5;
 	// grey *= waveOffset*.5 + .5;
-	grey *= mix(waveOffset, 1.0, 1.0-soundOffset*.65);
+	grey *= waveOffset;
 
 	float theta = atan(vTextureCoord.y - center.y, vTextureCoord.x - center.x);
 	float maxDist = length(center);
 
 	dist = maxDist-distance(vTextureCoord, center);
 	uv = vec2(theta/PI/2.0, dist);
-	vec3 colorCircleSpectrum = texture2D(textureSpectrum, uv).rgb * pow(dist/maxDist*3.0, 3.0);
+	vec3 colorCircleSpectrum = texture2D(textureSpectrum, uv).rgb * pow(dist/maxDist*2.5, 3.0);
 	vec3 color = vec3(grey);
 	color *= colorCircleSpectrum;
 
+	dist = distance(vTextureCoord, center);
+	float t = 1.0;
+	if(dist>.5) t = 0.0;
+	else if (dist > .45) {
+		t = cos((dist-.45)/.05 * PI * .5);
+	}
+	color *= t;
+
 	gl_FragColor = vec4(color, 1.0);
-	// gl_FragColor = texture2D(textureSpectrum, uv);
-	// gl_FragColor = vec4(colorCircleSpectrum, 1.0);
 
 }

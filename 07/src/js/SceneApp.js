@@ -3,6 +3,7 @@
 var GL = bongiovi.GL, gl;
 var ViewNoise = require("./ViewNoise");
 var ViewPlane = require("./ViewPlane");
+var ViewPost = require("./ViewPost");
 
 function SceneApp() {
 	gl = GL.gl;
@@ -15,7 +16,9 @@ function SceneApp() {
 	this.camera.lockRotation(false);
 
 	this.camera._rx.value = -.3;
+	this.camera._rx.limit(-1, 0);
 	this.camera._ry.value = -.3;
+	this.camera.radius.value = 250;
 
 	window.addEventListener("resize", this.resize.bind(this));
 	this.resize();
@@ -49,8 +52,9 @@ p._initTextures = function() {
 
 	this._textureSpectrum = new bongiovi.GLTexture(this.canvasSpectrum);
 
-	var noiseSize = 1024;
+	var noiseSize  = 1024;
 	this._fboNoise = new bongiovi.FrameBuffer(noiseSize, noiseSize);
+	this._fboPost  = new bongiovi.FrameBuffer(GL.width, GL.height);
 };
 
 p._initViews = function() {
@@ -59,6 +63,7 @@ p._initViews = function() {
 	this._vDotPlane = new bongiovi.ViewDotPlane();
 	this._vNoise    = new ViewNoise();
 	this._vPlane 	= new ViewPlane();
+	this._vPost 	= new ViewPost();
 };
 
 p.render = function() {
@@ -81,16 +86,26 @@ p.render = function() {
 	GL.rotate(this.sceneRotation.matrix);
 	// this._vAxis.render();
 	// this._vDotPlane.render();
+
+	this._fboPost.bind();
+	GL.clear(0, 0, 0, 1);
 	this._vPlane.render(this._fboNoise.getTexture(), [0, 0]);
 	this._vPlane.render(this._fboNoise.getTexture(), [1, 0]);
 	this._vPlane.render(this._fboNoise.getTexture(), [1, 1]);
 	this._vPlane.render(this._fboNoise.getTexture(), [0, 1]);
+	this._fboPost.unbind();
+
+	GL.setMatrices(this.cameraOtho);
+	GL.rotate(this.rotationFront);
+	this._vPost.render(this._fboPost.getTexture());
 };
 
 p.resize = function() {
 	var scale = 1.0;
 	GL.setSize(window.innerWidth*scale, window.innerHeight*scale);
 	this.camera.resize(GL.aspectRatio);
+	this._fboPost.destroy();
+	this._fboPost  = new bongiovi.FrameBuffer(GL.width, GL.height);
 };
 
 

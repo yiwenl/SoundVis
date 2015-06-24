@@ -66,10 +66,12 @@ p._init = function() {
 };
 
 p.render = function(texture, uv) {
-	this.shader.bind();
-	this.shader.uniform("texture", "uniform1i", 0);
+	var skipShader = true;
+	if(uv[0] == uv[1]) skipShader = false;
+	if(!skipShader) this.shader.bind();
+	if(!skipShader) this.shader.uniform("texture", "uniform1i", 0);
 	this.shader.uniform("uv", "uniform2fv", uv);
-	texture.bind(0);
+	if(!skipShader) texture.bind(0);
 	GL.draw(this.mesh);
 };
 
