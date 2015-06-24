@@ -20,8 +20,8 @@ p._init = function() {
 	var coords = [];
 	var indices = []; 
 	var index = 0;
-	var num = 100;
-	var size = 500;
+	var num = 128;
+	var size = 200;
 	var uvGap = 1/num;
 
 	function getPosition(i, j) {
@@ -65,9 +65,10 @@ p._init = function() {
 	this.mesh.bufferIndices(indices);
 };
 
-p.render = function(texture) {
+p.render = function(texture, uv) {
 	this.shader.bind();
 	this.shader.uniform("texture", "uniform1i", 0);
+	this.shader.uniform("uv", "uniform2fv", uv);
 	texture.bind(0);
 	GL.draw(this.mesh);
 };

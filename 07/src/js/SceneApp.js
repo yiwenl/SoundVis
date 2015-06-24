@@ -29,8 +29,8 @@ p._initSound = function() {
 	this.soundOffset = 0;
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
-	    url: ['assets/audio/03.mp3'],
-	    volume: 0.005,
+	    url: ['assets/audio/05.mp3'],
+	    volume: 0.5,
 	    loop: true,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded");
@@ -79,9 +79,12 @@ p.render = function() {
 	GL.setViewport(0, 0, GL.width, GL.height);
 	GL.setMatrices(this.camera);
 	GL.rotate(this.sceneRotation.matrix);
-	this._vAxis.render();
-	this._vDotPlane.render();
-	this._vPlane.render(this._fboNoise.getTexture());
+	// this._vAxis.render();
+	// this._vDotPlane.render();
+	this._vPlane.render(this._fboNoise.getTexture(), [0, 0]);
+	this._vPlane.render(this._fboNoise.getTexture(), [1, 0]);
+	this._vPlane.render(this._fboNoise.getTexture(), [1, 1]);
+	this._vPlane.render(this._fboNoise.getTexture(), [0, 1]);
 };
 
 p.resize = function() {
