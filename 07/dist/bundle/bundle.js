@@ -9,10 +9,15 @@ var ViewSkip = require("./ViewSkip");
 
 function SceneApp() {
 	gl = GL.gl;
-	this.sum = 0;
+	this.sum = new bongiovi.EaseNumber(0, 1);
 	this._initSound();
 	this.count = 0;
 	bongiovi.Scene.call(this);
+
+	this.sceneRotation.lock(true);
+	this.camera.lockRotation(false);
+	this.camera._rx.value = -.35;
+	this.camera._ry.value = -.35;
 }
 
 
@@ -25,7 +30,7 @@ p._initSound = function() {
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
 	    url: ['assets/audio/03.mp3'],
-	    volume: 1.0,
+	    volume: 0.2,
 	    loop: true,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded");
@@ -72,9 +77,9 @@ p.render = function() {
 	this._fboTarget.bind();
 	GL.clear(0, 0, 0, 0);
 	if(this.count++ % 5 == 0) {
-		this._vSim.render(this._fboCurrent.getTexture());
+		this._vSim.render(this._fboCurrent.getTexture(), this.sum.value);
 	} else {
-		this._vSkip.render(this._fboCurrent.getTexture());
+		this._vSkip.render(this._fboCurrent.getTexture(), this.sum.value);
 	}
 	
 	this._fboTarget.unbind();
@@ -114,7 +119,7 @@ p._getSoundData = function() {
 
 
 	sum /= f.length;
-	this.sum = Math.min(sum, 120) / 120;
+	this.sum.value = Math.min(sum, 120);
 };
 
 p.resize = function() {
@@ -240,9 +245,9 @@ var gl;
 function ViewSimulation() {
 	gl = GL.gl;
 	this.count = Math.random() * 0xFF;
-	bongiovi.View.call(this, null, "#define GLSLIFY 1\n\nprecision highp float;\n\nuniform sampler2D texture;\nuniform float time;\nuniform float numParticles;\nvarying vec2 vTextureCoord;\n\n\nconst float PI = 3.14;\nconst float PI_2 = 3.14*2.00;\n\n\nvec4 permute(vec4 x) { return mod(((x*34.00)+1.00)*x, 289.00); }\nvec4 taylorInvSqrt(vec4 r) { return 1.79 - 0.85 * r; }\n\nfloat snoise(vec3 v){\n\tconst vec2 C = vec2(1.00/6.00, 1.00/3.00) ;\n\tconst vec4 D = vec4(0.00, 0.50, 1.00, 2.00);\n\t\n\tvec3 i = floor(v + dot(v, C.yyy) );\n\tvec3 x0 = v - i + dot(i, C.xxx) ;\n\t\n\tvec3 g = step(x0.yzx, x0.xyz);\n\tvec3 l = 1.00 - g;\n\tvec3 i1 = min( g.xyz, l.zxy );\n\tvec3 i2 = max( g.xyz, l.zxy );\n\t\n\tvec3 x1 = x0 - i1 + 1.00 * C.xxx;\n\tvec3 x2 = x0 - i2 + 2.00 * C.xxx;\n\tvec3 x3 = x0 - 1. + 3.00 * C.xxx;\n\t\n\ti = mod(i, 289.00 );\n\tvec4 p = permute( permute( permute( i.z + vec4(0.00, i1.z, i2.z, 1.00 )) + i.y + vec4(0.00, i1.y, i2.y, 1.00 )) + i.x + vec4(0.00, i1.x, i2.x, 1.00 ));\n\t\n\tfloat n_ = 1.00/7.00;\n\tvec3 ns = n_ * D.wyz - D.xzx;\n\t\n\tvec4 j = p - 49.00 * floor(p * ns.z *ns.z);\n\t\n\tvec4 x_ = floor(j * ns.z);\n\tvec4 y_ = floor(j - 7.00 * x_ );\n\t\n\tvec4 x = x_ *ns.x + ns.yyyy;\n\tvec4 y = y_ *ns.x + ns.yyyy;\n\tvec4 h = 1.00 - abs(x) - abs(y);\n\t\n\tvec4 b0 = vec4( x.xy, y.xy );\n\tvec4 b1 = vec4( x.zw, y.zw );\n\t\n\tvec4 s0 = floor(b0)*2.00 + 1.00;\n\tvec4 s1 = floor(b1)*2.00 + 1.00;\n\tvec4 sh = -step(h, vec4(0.00));\n\t\n\tvec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;\n\tvec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;\n\t\n\tvec3 p0 = vec3(a0.xy,h.x);\n\tvec3 p1 = vec3(a0.zw,h.y);\n\tvec3 p2 = vec3(a1.xy,h.z);\n\tvec3 p3 = vec3(a1.zw,h.w);\n\t\n\tvec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));\n\tp0 *= norm.x;\n\tp1 *= norm.y;\n\tp2 *= norm.z;\n\tp3 *= norm.w;\n\t\n\tvec4 m = max(0.60 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.00);\n\tm = m * m;\n\treturn 42.00 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );\n}\n\nfloat snoise(float x, float y, float z){\n\treturn snoise(vec3(x, y, z));\n}\n\nfloat rand(vec2 co){\n    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);\n}\n\nvec3 getPosition(vec3 color) {\n\tfloat theta = color.x;\n\tfloat y = color.y;\n\tfloat r = color.z;\n\n\treturn vec3(cos(theta) * r, y, sin(theta) * r);\n}\n\nconst float posOffset = 0.01;\nconst float MAX_ROTATION_SPEED = 0.05;\nconst float MAX_RISING_SPEED = 0.10;\nconst float MAX_HEIGHT = 400.00;\n\nvoid main(void) {\n\tif(vTextureCoord.x < 0.50) {\n\t\tvec2 uvVel = vTextureCoord + vec2(0.50, 0.00);\n\t\tvec3 vel = texture2D(texture, uvVel).rgb;\n\t\tvec3 pos = texture2D(texture, vTextureCoord).rgb;\n\t\tpos += vel;\n\t\tif(pos.y > MAX_HEIGHT) {\n\t\t\tpos.y -= MAX_HEIGHT;\n\t\t}\n\t\tgl_FragColor = vec4(pos, 1.00);\n\t} else {\n\t\tvec2 uvPos = vTextureCoord - vec2(0.50, 0.00);\n\t\tvec3 colorPos = texture2D(texture, uvPos).rgb;\n\t\tvec3 pos = getPosition(colorPos);\n\t\tvec3 vel = texture2D(texture, vTextureCoord).rgb;\n\t\tfloat ax = snoise(pos.x * posOffset + time, pos.y * posOffset + time, pos.z * posOffset + time) + 0.50;\n\t\tvel.x += ax * pow(0.1, 4.00);\n\t\tif(vel.x > MAX_ROTATION_SPEED) vel.x = MAX_ROTATION_SPEED;\n\t\tif(vel.x < 0.00) vel.x = 0.00;\n\n\t\tfloat ay = snoise(pos.y * posOffset + time, pos.z * posOffset + time, pos.x * posOffset + time) + 0.50;\n\t\tvel.y += ay * pow(0.10, 1.00);\n\t\tif(vel.y > MAX_RISING_SPEED) vel.y = MAX_RISING_SPEED;\n\t\tif(vel.y < 0.00) vel.y = 0.00;\n\n\t\tvec3 newPos = getPosition(pos + vel);\n\t\tif(newPos.y >= MAX_HEIGHT) {\n\t\t\tvel.xy *= 0.0;\n\t\t\t// vel.z = (rand(vTextureCoord+time) + 1.0) * 75.0;\n\t\t}\n\t\n\t\tgl_FragColor = vec4(vel, 1.00);\n\t} \n}");
+	bongiovi.View.call(this, null, "#define GLSLIFY 1\n\nprecision highp float;\n\nuniform sampler2D texture;\nuniform float time;\nuniform float numParticles;\nuniform float soundOffset;\nvarying vec2 vTextureCoord;\n\n\nconst float PI = 3.14;\nconst float PI_2 = 3.14*2.00;\n\n\nvec4 permute(vec4 x) { return mod(((x*34.00)+1.00)*x, 289.00); }\nvec4 taylorInvSqrt(vec4 r) { return 1.79 - 0.85 * r; }\n\nfloat snoise(vec3 v){\n\tconst vec2 C = vec2(1.00/6.00, 1.00/3.00) ;\n\tconst vec4 D = vec4(0.00, 0.50, 1.00, 2.00);\n\t\n\tvec3 i = floor(v + dot(v, C.yyy) );\n\tvec3 x0 = v - i + dot(i, C.xxx) ;\n\t\n\tvec3 g = step(x0.yzx, x0.xyz);\n\tvec3 l = 1.00 - g;\n\tvec3 i1 = min( g.xyz, l.zxy );\n\tvec3 i2 = max( g.xyz, l.zxy );\n\t\n\tvec3 x1 = x0 - i1 + 1.00 * C.xxx;\n\tvec3 x2 = x0 - i2 + 2.00 * C.xxx;\n\tvec3 x3 = x0 - 1. + 3.00 * C.xxx;\n\t\n\ti = mod(i, 289.00 );\n\tvec4 p = permute( permute( permute( i.z + vec4(0.00, i1.z, i2.z, 1.00 )) + i.y + vec4(0.00, i1.y, i2.y, 1.00 )) + i.x + vec4(0.00, i1.x, i2.x, 1.00 ));\n\t\n\tfloat n_ = 1.00/7.00;\n\tvec3 ns = n_ * D.wyz - D.xzx;\n\t\n\tvec4 j = p - 49.00 * floor(p * ns.z *ns.z);\n\t\n\tvec4 x_ = floor(j * ns.z);\n\tvec4 y_ = floor(j - 7.00 * x_ );\n\t\n\tvec4 x = x_ *ns.x + ns.yyyy;\n\tvec4 y = y_ *ns.x + ns.yyyy;\n\tvec4 h = 1.00 - abs(x) - abs(y);\n\t\n\tvec4 b0 = vec4( x.xy, y.xy );\n\tvec4 b1 = vec4( x.zw, y.zw );\n\t\n\tvec4 s0 = floor(b0)*2.00 + 1.00;\n\tvec4 s1 = floor(b1)*2.00 + 1.00;\n\tvec4 sh = -step(h, vec4(0.00));\n\t\n\tvec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;\n\tvec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;\n\t\n\tvec3 p0 = vec3(a0.xy,h.x);\n\tvec3 p1 = vec3(a0.zw,h.y);\n\tvec3 p2 = vec3(a1.xy,h.z);\n\tvec3 p3 = vec3(a1.zw,h.w);\n\t\n\tvec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));\n\tp0 *= norm.x;\n\tp1 *= norm.y;\n\tp2 *= norm.z;\n\tp3 *= norm.w;\n\t\n\tvec4 m = max(0.60 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.00);\n\tm = m * m;\n\treturn 42.00 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );\n}\n\nfloat snoise(float x, float y, float z){\n\treturn snoise(vec3(x, y, z));\n}\n\nfloat rand(vec2 co){\n    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);\n}\n\nvec3 getPosition(vec3 color) {\n\tfloat theta = color.x;\n\tfloat y = color.y;\n\tfloat r = color.z;\n\n\treturn vec3(cos(theta) * r, y, sin(theta) * r);\n}\n\nconst float posOffset = 0.01;\nconst float MAX_ROTATION_SPEED = 0.03;\nconst float MAX_RISING_SPEED = 0.30;\nconst float MAX_HEIGHT = 400.00;\nconst float MAX_RADIUS = 150.0;\n\n\nvoid main(void) {\n\tif(vTextureCoord.x < 0.50) {\n\t\tvec2 uvVel = vTextureCoord + vec2(0.50, 0.00);\n\t\tvec3 vel = texture2D(texture, uvVel).rgb;\n\t\tvec3 pos = texture2D(texture, vTextureCoord).rgb;\n\t\tpos += vel;\n\t\tif(pos.y > MAX_HEIGHT) {\n\t\t\tfloat tempo = rand(vec2(soundOffset)) + .5;\n\t\t\tpos.y -= MAX_HEIGHT + tempo * 20.0;\n\t\t\tpos.x = rand(vTextureCoord) * PI * 2.0;\n\t\t\tpos.z = tempo * 100.0;\n\t\t}\n\t\tif(pos.z <0.0) {\n\t\t\tpos.z = 0.0;\n\t\t}\n\t\tgl_FragColor = vec4(pos, 1.00);\n\t} else {\n\t\tvec2 uvPos = vTextureCoord - vec2(0.50, 0.00);\n\t\tvec3 colorPos = texture2D(texture, uvPos).rgb;\n\t\tvec3 pos = getPosition(colorPos);\n\t\tvec3 vel = texture2D(texture, vTextureCoord).rgb;\n\t\tfloat ax = snoise(pos.x * posOffset + time, pos.y * posOffset + time, pos.z * posOffset + time) + 0.50;\n\t\tvel.x += ax * pow(0.1, 4.00);\n\t\tif(vel.x > MAX_ROTATION_SPEED) vel.x = MAX_ROTATION_SPEED;\n\t\tif(vel.x < 0.00) vel.x = 0.00;\n\n\t\tfloat ay = snoise(pos.y * posOffset + time, pos.z * posOffset + time, pos.x * posOffset + time) + 0.4;\n\t\tvel.y += ay * pow(0.10, 1.00);\n\t\tif(vel.y > MAX_RISING_SPEED) vel.y = MAX_RISING_SPEED;\n\t\tif(vel.y < 0.00) vel.y -= vel.y * .2;\n\n\t\tfloat az = snoise(pos.z * posOffset + time, pos.x * posOffset + time, pos.y * posOffset + time) + 0.5;\n\t\tvel.z += az * pow(.1, 3.00);\n\t\tfloat mRadius = 1.0 - pos.y/MAX_HEIGHT;\n\t\tmRadius = tan(mRadius * PI * .5 * .5);\n\t\tfloat rx = snoise(pos.y * posOffset, time*10.0, time*2.0) + 0.49;\n\t\tmRadius = (.02 + mRadius * .98) + rx * 70.0 * (mRadius * .25 + .75);\n\t\tif(pos.z > mRadius) {\n\t\t\tvel.z -= (pos.z - mRadius) * pow(.1, 3.5);\n\t\t} else if(pos.z <= 0.0) {\n\t\t\tvel.z = (rand(vTextureCoord * time)+1.0) * .001;\n\t\t}\n\n\t\tvel.y *= .98;\n\n\t\tvec3 newPos = getPosition(pos + vel);\n\t\tif(newPos.y >= MAX_HEIGHT) {\n\t\t\tvel *= 0.0;\n\t\t}\n\t\n\t\tgl_FragColor = vec4(vel, 1.00);\n\t} \n}");
 
-	new TangledShader(gl, this.shader.fragmentShader, this._onShaderUpdate.bind(this));
+	// new TangledShader(gl, this.shader.fragmentShader, this._onShaderUpdate.bind(this));
 }
 
 var p = ViewSimulation.prototype = new bongiovi.View();
@@ -258,9 +263,11 @@ p._onShaderUpdate = function(shader) {
 	this.shader.attachShaderProgram();
 };
 
-p.render = function(texture) {
+p.render = function(texture, soundOffset) {
+	// console.log(soundOffset);
 	this.shader.bind();
 	this.shader.uniform("time", "uniform1f", this.count);
+	this.shader.uniform("soundOffset", "uniform1f", soundOffset);
 	this.shader.uniform("texture", "uniform1i", 0);
 	texture.bind(0);
 	GL.draw(this.mesh);
@@ -279,7 +286,7 @@ var gl;
 function ViewSimulation() {
 	gl = GL.gl;
 	this.count = Math.random() * 0xFF;
-	bongiovi.View.call(this, null, "#define GLSLIFY 1\n\nprecision highp float;\n\nuniform sampler2D texture;\nvarying vec2 vTextureCoord;\n\nconst float MAX_HEIGHT = 400.00;\n\nvoid main(void) {\n\tif(vTextureCoord.x < 0.50) {\n\t\tvec2 uvVel = vTextureCoord + vec2(0.50, 0.00);\n\t\tvec3 vel = texture2D(texture, uvVel).rgb;\n\t\tvec3 pos = texture2D(texture, vTextureCoord).rgb;\n\t\tpos += vel;\n\t\tif(pos.y > MAX_HEIGHT) {\n\t\t\tpos.y -= MAX_HEIGHT;\n\t\t}\n\t\tgl_FragColor = vec4(pos, 1.00);\n\t} else {\n\t\tvec3 vel = texture2D(texture, vTextureCoord).rgb;\n\t\tgl_FragColor = vec4(vel, 1.00);\n\t} \n}");
+	bongiovi.View.call(this, null, "#define GLSLIFY 1\n\nprecision highp float;\n\nuniform sampler2D texture;\nuniform float soundOffset;\nvarying vec2 vTextureCoord;\n\nfloat rand(vec2 co){\n    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);\n}\n\nconst float MAX_HEIGHT = 400.00;\nconst float PI = 3.14;\nconst float PI_2 = 3.14*2.00;\nuniform float time;\n\nvoid main(void) {\n\tif(vTextureCoord.x < 0.50) {\n\t\tvec2 uvVel = vTextureCoord + vec2(0.50, 0.00);\n\t\tvec3 vel = texture2D(texture, uvVel).rgb;\n\t\tvec3 pos = texture2D(texture, vTextureCoord).rgb;\n\t\tpos += vel;\n\t\tif(pos.y > MAX_HEIGHT) {\n\t\t\tfloat tempo = rand(vec2(soundOffset)) + .5;\n\t\t\tpos.y -= MAX_HEIGHT + tempo * 20.0;\n\t\t\tpos.x = rand(vTextureCoord) * PI * 2.0;\n\t\t\tpos.z = tempo * 100.0;\n\t\t}\n\t\tgl_FragColor = vec4(pos, 1.00);\n\t} else {\n\t\tvec3 vel = texture2D(texture, vTextureCoord).rgb;\n\t\tgl_FragColor = vec4(vel, 1.00);\n\t} \n}");
 }
 
 var p = ViewSimulation.prototype = new bongiovi.View();
@@ -290,9 +297,10 @@ p._init = function() {
 	this.mesh = bongiovi.MeshUtils.createPlane(2, 2, 1);
 };
 
-p.render = function(texture) {
+p.render = function(texture, soundOffset) {
 	this.shader.bind();
 	this.shader.uniform("time", "uniform1f", this.count);
+	this.shader.uniform("soundOffset", "uniform1f", soundOffset);
 	this.shader.uniform("texture", "uniform1i", 0);
 	texture.bind(0);
 	GL.draw(this.mesh);
@@ -308,7 +316,7 @@ window.Sono     = require("./libs/sono.min.js");
 // var dat         = require("dat-gui");
 
 window.params = {
-	numParticles:256*2
+	numParticles:256
 };
 
 (function() {
