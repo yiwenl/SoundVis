@@ -17,7 +17,13 @@ float grainsize = 1.6; //grain particle size (1.5 - 2.5)
 float lumamount = 1.0; //
 
 uniform float timer;
+uniform float showDepth;
+uniform float depthContrast;
+uniform float contrastMidPoint;
+uniform float depthOffset;
 uniform sampler2D texture;
+uniform sampler2D textureBlur;
+uniform sampler2D textureDepth;
 varying vec2 vTextureCoord;
 
 vec4 rnm(in vec2 tc) 
@@ -83,6 +89,16 @@ float pnoise3D(in vec3 p)
 	return n_xyz;
 }
 
+float contrast(float value, float scale, float midPoint) {
+	float nv = midPoint + (value - midPoint) * scale;
+	nv = max(min(nv, 1.0), 0.0);
+	return nv;
+}
+
+float contrast(float value, float scale) {
+	return contrast(value, scale, .5);
+}
+
 //2d coordinate orientation thing
 vec2 coordRot(in vec2 tc, in float angle)
 {
@@ -94,9 +110,39 @@ vec2 coordRot(in vec2 tc, in float angle)
 	return vec2(rotX,rotY);
 }
 
+float getDepth(float z, float n, float f) {
+	return (2.0 * n) / (f + n - z*(f-n));
+}
+
+float getDepth(in vec2 uv) {
+	float d = texture2D(textureDepth, uv).r;
+	return getDepth(d, 5.0, 500.0);
+}
+
+const float PI = 3.141592657;
+float getNormalizeDepth(float value, float midPoint) {
+	float newValue;
+	if(value < midPoint) {
+	  newValue = 1.0 - cos(value/midPoint*PI*.5);
+	} else {
+	  newValue = 1.0 - sin( (value-midPoint) / (1.0 - midPoint) * PI * .5);
+	  // newValue = 0.0;
+	}
+
+	return 1.0-newValue+depthOffset;
+}
+
 void main(void) {
 
 	vec4 color = texture2D(texture, vTextureCoord);
+	float d = getDepth(vTextureCoord);
+	d = getNormalizeDepth(d, contrastMidPoint);
+	d = contrast(d, (depthContrast+1.0), .5);
+
+	vec4 colorBlur = texture2D(textureBlur, vTextureCoord);
+	color.rgb = mix(color.rgb, colorBlur.rgb, d);
+
+
 	const vec4 DARK = vec4(.01, .01, .01, 1.0);
 	const vec4 BRIGHT = vec4(1.0, 1.0, .95, 1.0);
 	color = mix(DARK, BRIGHT, color.r);
@@ -118,4 +164,6 @@ void main(void) {
 	col = col+noise*grainamount;
 
 	gl_FragColor = vec4(col, 1.0);
+	if(showDepth > .0) gl_FragColor = vec4(vec3(d), 1.0);
+	// gl_FragColor.rgb = colorBlur.rgb;
 }

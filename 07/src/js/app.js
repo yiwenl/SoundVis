@@ -1,7 +1,15 @@
 // app.js
 window.bongiovi = require("./libs/bongiovi.js");
 window.Sono     = require("./libs/sono.min.js");
-var dat = require("dat-gui");
+var dat         = require("dat-gui");
+
+window.params = {
+	blur:20.0,
+	depthContrast:2.0,
+	contrastMidPoint:.47,
+	depthOffset:.3,
+	showDepth:true
+};
 
 (function() {
 	var SceneApp = require("./SceneApp");
@@ -26,7 +34,12 @@ var dat = require("dat-gui");
 		this._scene = new SceneApp();
 		bongiovi.Scheduler.addEF(this, this._loop);
 
-		// this.gui = new dat.GUI({width:300});
+		this.gui = new dat.GUI({width:300});
+		this.gui.add(params, "blur", 1, 100);
+		this.gui.add(params, "depthContrast", 1, 20).step(.1);
+		this.gui.add(params, "contrastMidPoint", 0, 1).step(.01);
+		this.gui.add(params, "depthOffset", 0, 1).step(.01);
+		this.gui.add(params, "showDepth");
 	};
 
 	p._loop = function() {

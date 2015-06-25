@@ -4,6 +4,8 @@ var GL = bongiovi.GL, gl;
 var ViewNoise = require("./ViewNoise");
 var ViewPlane = require("./ViewPlane");
 var ViewPost = require("./ViewPost");
+var ViewBlur = require("./ViewBlur");
+var ViewDof = require("./ViewDof");
 
 function SceneApp() {
 	gl = GL.gl;
@@ -33,7 +35,7 @@ p._initSound = function() {
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
 	    url: ['assets/audio/05.mp3'],
-	    volume: 1.0,
+	    volume: 0.0,
 	    loop: true,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded");
@@ -55,6 +57,9 @@ p._initTextures = function() {
 	var noiseSize  = 1024;
 	this._fboNoise = new bongiovi.FrameBuffer(noiseSize, noiseSize);
 	this._fboPost  = new bongiovi.FrameBuffer(GL.width, GL.height);
+	var blurSize = 256;
+	this._fboBlur  = new bongiovi.FrameBuffer(blurSize, blurSize);
+	this._fboBlurFinal  = new bongiovi.FrameBuffer(blurSize, blurSize);
 };
 
 p._initViews = function() {
@@ -64,6 +69,8 @@ p._initViews = function() {
 	this._vNoise    = new ViewNoise();
 	this._vPlane 	= new ViewPlane();
 	this._vPost 	= new ViewPost();
+	this._vBlur 	= new ViewBlur();
+	this._vDof 		= new ViewDof();
 };
 
 p.render = function() {
@@ -97,7 +104,32 @@ p.render = function() {
 
 	GL.setMatrices(this.cameraOtho);
 	GL.rotate(this.rotationFront);
-	this._vPost.render(this._fboPost.getTexture());
+
+	var blur = params.blur;
+
+	GL.setViewport(0, 0, this._fboBlur.width, this._fboBlur.height);
+	this._fboBlur.bind();
+	GL.clear(0, 0, 0, 1);
+	this._vBlur.render(this._fboPost.getTexture(), [0, blur/GL.width]);
+	this._fboBlur.unbind();
+
+	this._fboBlurFinal.bind();
+	GL.clear(0, 0, 0, 1);
+	this._vBlur.render(this._fboBlur.getTexture(), [blur/GL.height, 0])
+	this._fboBlurFinal.unbind();
+
+
+	GL.setViewport(0, 0, GL.width/2, GL.height/2);
+	this._vCopy.render(this._fboBlur.getTexture());
+
+	GL.setViewport(GL.width/2, 0, GL.width/2, GL.height/2);
+	this._vCopy.render(this._fboBlurFinal.getTexture());
+
+	GL.setViewport(0, GL.height/2, GL.width/2, GL.height/2);
+	this._vCopy.render(this._fboPost.getTexture());
+
+	GL.setViewport(GL.width/2, GL.height/2, GL.width/2, GL.height/2);
+	this._vPost.render(this._fboPost.getTexture(), this._fboBlurFinal.getTexture(), this._fboPost.getDepthTexture());
 };
 
 p.resize = function() {
@@ -126,7 +158,6 @@ p._getSoundData = function() {
 		var index = i * 4;
 		sum += f[i];
 	}
-
 
 	sum /= f.length;
 	sum = Math.min(sum, 120);
