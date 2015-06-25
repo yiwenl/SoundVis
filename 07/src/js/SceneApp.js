@@ -22,6 +22,7 @@ function SceneApp() {
 	this.camera._ry.value = -.3;
 	this.camera.radius.value = 250;
 
+	this.skipCount = 0;
 	window.addEventListener("resize", this.resize.bind(this));
 	this.resize();
 }
@@ -74,7 +75,7 @@ p._initViews = function() {
 };
 
 p.render = function() {
-	this._getSoundData();
+	if(this.skipCount++ % 2 == 0) this._getSoundData();
 	GL.setMatrices(this.cameraOtho);
 	GL.rotate(this.rotationFront);
 	GL.setViewport(0, 0, this._fboNoise.width, this._fboNoise.height);
@@ -149,7 +150,7 @@ p._getSoundData = function() {
 	}
 	var f = this.analyser.getFrequencies();
 	this.ctx.drawImage(this.canvasSpectrum, 0, 1);
-	var imgData = this.ctx.getImageData(0, 0, this.canvasSpectrum.width, this.canvasSpectrum.height);
+	var imgData = this.ctx.getImageData(0, 0, this.canvasSpectrum.width, 1);
 	var pixels = imgData.data;
 
 	var sum = 0;

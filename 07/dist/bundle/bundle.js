@@ -4496,6 +4496,7 @@ function SceneApp() {
 	this.camera._ry.value = -.3;
 	this.camera.radius.value = 250;
 
+	this.skipCount = 0;
 	window.addEventListener("resize", this.resize.bind(this));
 	this.resize();
 }
@@ -4548,7 +4549,7 @@ p._initViews = function() {
 };
 
 p.render = function() {
-	this._getSoundData();
+	if(this.skipCount++ % 2 == 0) this._getSoundData();
 	GL.setMatrices(this.cameraOtho);
 	GL.rotate(this.rotationFront);
 	GL.setViewport(0, 0, this._fboNoise.width, this._fboNoise.height);
@@ -4623,7 +4624,7 @@ p._getSoundData = function() {
 	}
 	var f = this.analyser.getFrequencies();
 	this.ctx.drawImage(this.canvasSpectrum, 0, 1);
-	var imgData = this.ctx.getImageData(0, 0, this.canvasSpectrum.width, this.canvasSpectrum.height);
+	var imgData = this.ctx.getImageData(0, 0, this.canvasSpectrum.width, 1);
 	var pixels = imgData.data;
 
 	var sum = 0;
@@ -4723,7 +4724,7 @@ var gl;
 function ViewNoise() {
 	gl = GL.gl;
 	this.count = Math.random() * 0xFF;
-	bongiovi.View.call(this, null, "#define GLSLIFY 1\n\nprecision mediump float;\nvarying vec2 vTextureCoord;\n\nuniform sampler2D textureSpectrum;\n\nfloat map(float value, float sx, float sy, float tx, float ty) {\n\tfloat p = (value - sx) / ( sy - sx);\n\treturn tx + p * ( ty - tx);\n}\n\n\nfloat hash( vec2 p ) {\n\tfloat h = dot(p,vec2(127.1,311.7)); \n\treturn fract(sin(h)*43758.5453123);\n}\n\nfloat noise( in vec2 p ) {\n\tvec2 i = floor( p );\n\tvec2 f = fract( p );    \n\tvec2 u = f*f*(3.0-2.0*f);\n\treturn -1.0+2.0*mix( mix( hash( i + vec2(0.0,0.0) ), \n\t\t\t\t\t hash( i + vec2(1.0,0.0) ), u.x),\n\t\t\t\tmix( hash( i + vec2(0.0,1.0) ), \n\t\t\t\t\t hash( i + vec2(1.0,1.0) ), u.x), u.y);\n}\n\nconst float RX = 1.6;\nconst float RY = 1.2;\nconst mat2 rotation = mat2(RX,RY,-RY,RX);\nconst int NUM_ITER = 10;\nconst float PI = 3.141592657;\nuniform float time;\nuniform float soundOffset;\n\nconst vec2 center = vec2(.5);\nconst vec2 rippleCenter = vec2(.5, .5);\n\n\nvoid main(void) {   \n\tfloat offset = 5.000;\n\tvec2 uv = vTextureCoord;\n\tfloat grey = 0.0;\n\n\tfloat scale = 0.5;\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\tgrey += noise(uv*offset+time) * scale;\n\t\toffset *= 1.5;\n\t\tscale *= 0.52;\n\t\tuv *= rotation;\n\t}\n\n\tvec2 rc = rippleCenter + vec2(sin(cos(time)*.5871437+sin(time * .42846531))*.1, cos(sin(time)*.4568751+cos(time * .35871456))*.1);\n\tfloat dist = distance(vTextureCoord, rc);\n\tfloat sinOffset = pow(soundOffset+.75, 2.0);\n\tfloat waveOffset = (sin(dist * sinOffset * 550.0) + 1.0) * .5;\n\n\tgrey = (grey + 1.0) * 0.5;\n\t// grey *= waveOffset*.5 + .5;\n\tgrey *= waveOffset;\n\n\tfloat theta = atan(vTextureCoord.y - center.y, vTextureCoord.x - center.x);\n\tfloat maxDist = length(center);\n\n\tdist = maxDist-distance(vTextureCoord, center);\n\tuv = vec2(theta/PI/2.0, dist);\n\tvec3 colorCircleSpectrum = texture2D(textureSpectrum, uv).rgb * pow(dist/maxDist*2.5, 3.0);\n\tvec3 color = vec3(grey);\n\tcolor *= colorCircleSpectrum;\n\n\tdist = distance(vTextureCoord, center);\n\tfloat t = 1.0;\n\tif(dist>.5) t = 0.0;\n\telse if (dist > .45) {\n\t\tt = cos((dist-.45)/.05 * PI * .5);\n\t}\n\tcolor *= t;\n\n\tgl_FragColor = vec4(color, 1.0);\n\n}");
+	bongiovi.View.call(this, null, "#define GLSLIFY 1\n\nprecision mediump float;\nvarying vec2 vTextureCoord;\n\nuniform sampler2D textureSpectrum;\n\nfloat map(float value, float sx, float sy, float tx, float ty) {\n\tfloat p = (value - sx) / ( sy - sx);\n\treturn tx + p * ( ty - tx);\n}\n\n\nfloat hash( vec2 p ) {\n\tfloat h = dot(p,vec2(127.1,311.7)); \n\treturn fract(sin(h)*43758.5453123);\n}\n\nfloat noise( in vec2 p ) {\n\tvec2 i = floor( p );\n\tvec2 f = fract( p );    \n\tvec2 u = f*f*(3.0-2.0*f);\n\treturn -1.0+2.0*mix( mix( hash( i + vec2(0.0,0.0) ), \n\t\t\t\t\t hash( i + vec2(1.0,0.0) ), u.x),\n\t\t\t\tmix( hash( i + vec2(0.0,1.0) ), \n\t\t\t\t\t hash( i + vec2(1.0,1.0) ), u.x), u.y);\n}\n\nconst float RX = 1.6;\nconst float RY = 1.2;\nconst mat2 rotation = mat2(RX,RY,-RY,RX);\nconst int NUM_ITER = 10;\nconst float PI = 3.141592657;\nuniform float time;\nuniform float soundOffset;\n\nconst vec2 center = vec2(.5);\nconst vec2 rippleCenter = vec2(.5, .5);\n\n\nvoid main(void) {   \n\tfloat offset = 5.000;\n\tvec2 uv = vTextureCoord;\n\tfloat grey = 0.0;\n\n\tfloat scale = 0.5;\n\tfor(int i=0; i<NUM_ITER; i++) {\n\t\tgrey += noise(uv*offset+time) * scale;\n\t\toffset *= 1.5;\n\t\tscale *= .752;\n\t\tuv *= rotation;\n\t}\n\n\tvec2 rc = rippleCenter + vec2(sin(cos(time)*.5871437+sin(time * .42846531))*.1, cos(sin(time)*.4568751+cos(time * .35871456))*.1);\n\tfloat dist = distance(vTextureCoord, rc);\n\tfloat sinOffset = pow(soundOffset+.75, 2.0);\n\tfloat waveOffset = (sin(dist * sinOffset * 550.0) + 1.0) * .5;\n\n\tgrey = (grey + 1.0) * 0.5;\n\t// grey *= waveOffset*.5 + .5;\n\tgrey *= waveOffset;\n\n\tfloat theta = atan(vTextureCoord.y - center.y, vTextureCoord.x - center.x);\n\tfloat maxDist = length(center);\n\n\tdist = maxDist-distance(vTextureCoord, center);\n\tuv = vec2(theta/PI/2.0, dist);\n\tvec3 colorCircleSpectrum = texture2D(textureSpectrum, uv).rgb * pow(dist/maxDist*2.5, 3.0);\n\tvec3 color = vec3(grey);\n\tcolor *= colorCircleSpectrum;\n\n\tdist = distance(vTextureCoord, center);\n\tfloat t = 1.0;\n\tif(dist>.5) t = 0.0;\n\telse if (dist > .45) {\n\t\tt = cos((dist-.45)/.05 * PI * .5);\n\t}\n\tcolor *= t;\n\n\tgl_FragColor = vec4(color, 1.0);\n\n}");
 
 	// new TangledShader(gl, this.shader.fragmentShader, this._onShaderUpdated.bind(this));
 }
