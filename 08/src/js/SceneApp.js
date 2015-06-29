@@ -7,10 +7,18 @@ var ViewLine = require("./ViewLine");
 function SceneApp() {
 	gl = GL.gl;
 	this.sum = 0;
+	this.easeSum = new bongiovi.EaseNumber(0, .25);
 	this._initSound();
 	bongiovi.Scene.call(this);
 
 	window.addEventListener("resize", this.resize.bind(this));
+
+	this.camera.lockRotation(false);
+	this.sceneRotation.lock(true);
+
+	this.camera._rx.value = -.3;
+	this.camera._ry.value = -.1;
+
 	this.resize();
 }
 
@@ -23,7 +31,7 @@ p._initSound = function() {
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
 	    url: ['assets/audio/Oscillate.mp3'],
-	    volume: 0.0,
+	    volume: 1.0,
 	    loop: true,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded");
@@ -42,16 +50,35 @@ p._initViews = function() {
 	this._vAxis = new bongiovi.ViewAxis();
 	this._vDotPlane = new bongiovi.ViewDotPlane();
 	this._vLine = new ViewLine();
+
+	var numLines = 20;
+	this._lines = [];
+	var timeOffset = 15;
+	var gap = 10.0;
+
+	for(var i=0; i<numLines; i++) {
+		var z = (-numLines/2 + i) * gap;
+		var l = new ViewLine(i*timeOffset, z, i);
+		this._lines.push(l);
+	}
 };
 
 p.render = function() {
 	this._getSoundData();
-	this._vLine.speed.value = this.sum * 30.0 + 1.0;
-	this._vLine.waveHeight.value = this.sum * 30.0 + 10.0;
+	
 	// this._vLine.freq.value = this.sum*.1 + .01;
 	this._vAxis.render();
 	this._vDotPlane.render();
-	this._vLine.render();
+	// this._vLine.render();
+
+	for(var i=0; i<this._lines.length; i++) {
+		// this._lines[i].speed.value = this.sum * 30.0 + 1.0;
+		// this._lines[i].waveHeight.value = this.sum * 50.0 + 10.0;
+		this._lines[i].freq.value = this.easeSum.value * .001 + .01;
+		this._lines[i].speed.value = this.easeSum.value * 30.0 + 1.0;
+		this._lines[i].waveHeight.value = this.sum * .2 + 20.0;
+		this._lines[i].render();
+	}
 };
 
 
@@ -73,8 +100,18 @@ p._getSoundData = function() {
 	}
 
 	sum /= f.length;
-	sum = Math.min(sum, 120);
-	this.sum = sum/120;
+	var threshold = 10;
+	var maxSpeed = 2.0;
+
+	if(sum > threshold) {
+		this.sum += sum * 1.5;
+		this.easeSum.value = Math.min(this.sum, maxSpeed) * .1;
+	} else {
+		this.easeSum.value = 0;
+	}
+
+	this.sum -= this.sum * .1;
+	if(this.sum < 0) this.sum = 0;
 };
 
 p.resize = function() {

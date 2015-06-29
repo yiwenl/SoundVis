@@ -36,7 +36,7 @@ p._initSound = function() {
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
 	    url: ['assets/audio/05.mp3'],
-	    volume: 0.0,
+	    volume: 1.0,
 	    loop: true,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded");
@@ -75,7 +75,7 @@ p._initViews = function() {
 };
 
 p.render = function() {
-	if(this.skipCount++ % 2 == 0) this._getSoundData();
+	this._getSoundData();
 	GL.setMatrices(this.cameraOtho);
 	GL.rotate(this.rotationFront);
 	GL.setViewport(0, 0, this._fboNoise.width, this._fboNoise.height);
@@ -119,7 +119,8 @@ p.render = function() {
 	this._vBlur.render(this._fboBlur.getTexture(), [blur/GL.height, 0])
 	this._fboBlurFinal.unbind();
 
-
+/*	
+	//	TESTING	
 	GL.setViewport(0, 0, GL.width/2, GL.height/2);
 	this._vCopy.render(this._fboBlur.getTexture());
 
@@ -130,6 +131,10 @@ p.render = function() {
 	this._vCopy.render(this._fboPost.getTexture());
 
 	GL.setViewport(GL.width/2, GL.height/2, GL.width/2, GL.height/2);
+	this._vPost.render(this._fboPost.getTexture(), this._fboBlurFinal.getTexture(), this._fboPost.getDepthTexture());
+*/
+
+	GL.setViewport(0, 0, GL.width, GL.height);
 	this._vPost.render(this._fboPost.getTexture(), this._fboBlurFinal.getTexture(), this._fboPost.getDepthTexture());
 };
 

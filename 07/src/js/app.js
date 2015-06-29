@@ -6,9 +6,9 @@ var dat         = require("dat-gui");
 window.params = {
 	blur:20.0,
 	depthContrast:2.0,
-	contrastMidPoint:.47,
+	contrastMidPoint:.53,
 	depthOffset:.3,
-	showDepth:true
+	showDepth:false
 };
 
 (function() {
