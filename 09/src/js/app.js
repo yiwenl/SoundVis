@@ -3,12 +3,6 @@ window.bongiovi = require("./libs/bongiovi.js");
 window.Sono     = require("./libs/sono.min.js");
 var dat = require("dat-gui");
 
-window.params = {
-	decrease:.15,
-	decreaseMultiply:.007,
-	minThreshold:4.5
-};
-
 (function() {
 	var SceneApp = require("./SceneApp");
 
@@ -32,16 +26,7 @@ window.params = {
 		this._scene = new SceneApp();
 		bongiovi.Scheduler.addEF(this, this._loop);
 
-		this.gui = new dat.GUI({width:300});
-		this.gui.add(params, "decrease", 0, .2).step(.001);
-		this.gui.add(params, "decreaseMultiply", 0, .01).step(.0001);
-		this.gui.add(params, "minThreshold", .1, 5).step(.01);
-
-		for(var i=0; i<64; i++) {
-			params["f"+i] = 0;
-			this.gui.add(params, "f"+i, 0, 255).listen();
-		}
-
+		// this.gui = new dat.GUI({width:300});
 	};
 
 	p._loop = function() {
