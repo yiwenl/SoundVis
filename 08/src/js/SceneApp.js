@@ -23,6 +23,7 @@ function SceneApp() {
 	//	for beat detection
 	this._sumBeat = 0;
 	this._maxSumBeat = 0;
+	this._hasBeats = false;
 
 	this._canvas = document.createElement("canvas");
 	this._canvas.width = 100;
@@ -59,8 +60,9 @@ p._initSound = function() {
 	this.soundOffset = 0;
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
+	    // url: ['assets/audio/03.mp3'],
 	    url: ['assets/audio/Oscillate.mp3'],
-	    volume: 1.0,
+	    volume: 0.0,
 	    loop: true,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded");
@@ -147,13 +149,18 @@ p._getSoundData = function() {
 	// this._ctxBar.clearRect(0, 0, 100, 1);
 	this._ctx.clearRect(0, 0, 100, 100);
 	var fillColor = "#f60";
-	if(sumBeats - this._sumBeat > MIN_DIFFERENCE) {
+	if(sumBeats - this._sumBeat > MIN_DIFFERENCE && !this._hasBeats) {
 		console.debug(this._sumBeat.toFixed(2), sumBeats.toFixed(2), ":" , (sumBeats - this._sumBeat).toFixed(2));
 		this._sumBeat = sumBeats;
 		this._maxSumBeat = sumBeats;	
 		this._ctx.fillStyle = "#F00";
 		this._ctx.fillRect(50, 0, 50, 100);
-		fillColor = "#f00;"
+		fillColor = "#f00;";
+		this._hasBeats = true;
+		var that = this;
+		setTimeout(function() {
+			that._hasBeats = false;
+		}, params.minGap)
 	} else {
 		console.log(this._sumBeat.toFixed(2), sumBeats.toFixed(2));	
 	}

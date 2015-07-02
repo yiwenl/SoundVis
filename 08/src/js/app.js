@@ -6,7 +6,8 @@ var dat = require("dat-gui");
 window.params = {
 	decrease:.15,
 	decreaseMultiply:.007,
-	minThreshold:4.5
+	minThreshold:4.5,
+	minGap:300
 };
 
 (function() {
@@ -35,12 +36,13 @@ window.params = {
 		this.gui = new dat.GUI({width:300});
 		this.gui.add(params, "decrease", 0, .2).step(.001);
 		this.gui.add(params, "decreaseMultiply", 0, .01).step(.0001);
-		this.gui.add(params, "minThreshold", .1, 5).step(.01);
+		this.gui.add(params, "minThreshold", .1, 10).step(.01);
+		this.gui.add(params, "minGap", 100, 5000);
 
-		for(var i=0; i<64; i++) {
-			params["f"+i] = 0;
-			this.gui.add(params, "f"+i, 0, 255).listen();
-		}
+		// for(var i=0; i<64; i++) {
+		// 	params["f"+i] = 0;
+		// 	this.gui.add(params, "f"+i, 0, 255).listen();
+		// }
 
 	};
 

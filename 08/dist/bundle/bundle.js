@@ -7,7 +7,8 @@ var dat = require("dat-gui");
 window.params = {
 	decrease:.15,
 	decreaseMultiply:.007,
-	minThreshold:4.5
+	minThreshold:4.5,
+	minGap:300
 };
 
 (function() {
@@ -36,12 +37,13 @@ window.params = {
 		this.gui = new dat.GUI({width:300});
 		this.gui.add(params, "decrease", 0, .2).step(.001);
 		this.gui.add(params, "decreaseMultiply", 0, .01).step(.0001);
-		this.gui.add(params, "minThreshold", .1, 5).step(.01);
+		this.gui.add(params, "minThreshold", .1, 10).step(.01);
+		this.gui.add(params, "minGap", 100, 5000);
 
-		for(var i=0; i<64; i++) {
-			params["f"+i] = 0;
-			this.gui.add(params, "f"+i, 0, 255).listen();
-		}
+		// for(var i=0; i<64; i++) {
+		// 	params["f"+i] = 0;
+		// 	this.gui.add(params, "f"+i, 0, 255).listen();
+		// }
 
 	};
 
@@ -4499,6 +4501,7 @@ function SceneApp() {
 	//	for beat detection
 	this._sumBeat = 0;
 	this._maxSumBeat = 0;
+	this._hasBeats = false;
 
 	this._canvas = document.createElement("canvas");
 	this._canvas.width = 100;
@@ -4535,8 +4538,9 @@ p._initSound = function() {
 	this.soundOffset = 0;
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
+	    // url: ['assets/audio/03.mp3'],
 	    url: ['assets/audio/Oscillate.mp3'],
-	    volume: 1.0,
+	    volume: 0.0,
 	    loop: true,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded");
@@ -4623,13 +4627,18 @@ p._getSoundData = function() {
 	// this._ctxBar.clearRect(0, 0, 100, 1);
 	this._ctx.clearRect(0, 0, 100, 100);
 	var fillColor = "#f60";
-	if(sumBeats - this._sumBeat > MIN_DIFFERENCE) {
+	if(sumBeats - this._sumBeat > MIN_DIFFERENCE && !this._hasBeats) {
 		console.debug(this._sumBeat.toFixed(2), sumBeats.toFixed(2), ":" , (sumBeats - this._sumBeat).toFixed(2));
 		this._sumBeat = sumBeats;
 		this._maxSumBeat = sumBeats;	
 		this._ctx.fillStyle = "#F00";
 		this._ctx.fillRect(50, 0, 50, 100);
-		fillColor = "#f00;"
+		fillColor = "#f00;";
+		this._hasBeats = true;
+		var that = this;
+		setTimeout(function() {
+			that._hasBeats = false;
+		}, params.minGap)
 	} else {
 		console.log(this._sumBeat.toFixed(2), sumBeats.toFixed(2));	
 	}
