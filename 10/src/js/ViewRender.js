@@ -38,9 +38,13 @@ p._init = function() {
 	this.mesh.bufferIndices(indices);
 };
 
-p.render = function() {
-
+p.render = function(texture, textureNext, percent) {
 	this.shader.bind();
+	this.shader.uniform("texture", "uniform1i", 0);
+	this.shader.uniform("textureNext", "uniform1i", 1);
+	texture.bind(0);
+	textureNext.bind(1);
+	this.shader.uniform("percent", "uniform1f", 1.0-percent);
 	GL.draw(this.mesh);
 };
 

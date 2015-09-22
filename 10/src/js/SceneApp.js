@@ -4,10 +4,13 @@ var GL = bongiovi.GL, gl;
 var SoundCloudLoader = require("./SoundCloudLoader");
 var ViewSave = require("./ViewSave");
 var ViewRender = require("./ViewRender");
+var ViewSimulation = require("./ViewSimulation");
 
 function SceneApp() {
 	gl = GL.gl;
 	this.sum = 0;
+	this.frame = 0;
+	this.percent = 0;
 	this.easeSum = new bongiovi.EaseNumber(0, .25);
 	this._initSound();
 	bongiovi.Scene.call(this);
@@ -19,6 +22,7 @@ function SceneApp() {
 
 	this.camera._rx.value = -.3;
 	this.camera._ry.value = -.1;
+	this.camera.radius.value = 1500.0;
 
 	this.resize();
 }
@@ -62,6 +66,7 @@ p._initViews = function() {
 	this._vSave     = new ViewSave();
 	this._vCopy 	= new bongiovi.ViewCopy();
 	this._vRender 	= new ViewRender();
+	this._vSim 		= new ViewSimulation();
 
 
 	GL.setMatrices(this.cameraOtho);
@@ -73,19 +78,52 @@ p._initViews = function() {
 	this._fboCurrent.unbind();
 };
 
+
+p.updateFbo = function() {
+	GL.setMatrices(this.cameraOtho);
+	GL.rotate(this.rotationFront);
+
+	this._fboTarget.bind();
+	GL.setViewport(0, 0, this._fboCurrent.width, this._fboCurrent.height);
+	GL.clear(0, 0, 0, 0);
+	this._vSim.render(this._fboCurrent.getTexture() );
+	this._fboTarget.unbind();
+
+
+	var tmp = this._fboTarget;
+	this._fboTarget = this._fboCurrent;
+	this._fboCurrent = tmp;
+
+
+	GL.setMatrices(this.camera);
+	GL.rotate(this.sceneRotation.matrix);		
+	GL.setViewport(0, 0, GL.width, GL.height);
+};
+
+
 p.render = function() {
+
+	if(this.frame % params.skipCount == 0) {
+		this.updateFbo();
+		this.frame = 0;
+	}
+	this.percent = this.frame / params.skipCount;
+	
+	GL.setViewport(0, 0, GL.width, GL.height);
 	this._getSoundData();
 	
 	this._vAxis.render();
 	this._vDotPlane.render();
-	this._vRender.render(this._fboCurrent.getTexture());
+	this._vRender.render(this._fboCurrent.getTexture(), this._fboTarget.getTexture(), this.percent);
 
 
 	GL.setMatrices(this.cameraOtho);
 	GL.rotate(this.rotationFront);
 
 	// GL.setViewport(0, 0, this._fboCurrent.width, this._fboCurrent.height);
-	this._vCopy.render(this._fboCurrent.getTexture());
+	// this._vCopy.render(this._fboCurrent.getTexture());
+
+	this.frame++;
 };
 
 
@@ -122,7 +160,7 @@ p._getSoundData = function() {
 };
 
 p.resize = function() {
-	var scale = 1.0;
+	var scale = 2.0;
 	GL.setSize(window.innerWidth*scale, window.innerHeight*scale);
 	this.camera.resize(GL.aspectRatio);
 };

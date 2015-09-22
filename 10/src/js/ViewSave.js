@@ -24,12 +24,20 @@ p._init = function() {
 	var numParticles = params.numParticles;
 	var totalParticles = numParticles * numParticles;
 	console.log('Total Particles : ', totalParticles);
-	var ux, uy;
+	var ux, uy, r, y, theta;
 	var range = 200.0;
+
+
+	//	[RADIUS, Y, THETA]
 
 	for(var j=0; j<numParticles; j++) {
 		for(var i=0; i<numParticles; i++) {
-			positions.push([random(-range, range), random(-range, range), random(-range, range)]);
+
+			r = random(10, range);
+			y = random(0, 1000);
+			theta = random(0, Math.PI * 2.0);
+
+			positions.push([r, y, theta]);
 
 			ux = i/numParticles-1.0;
 			uy = j/numParticles-1.0;
