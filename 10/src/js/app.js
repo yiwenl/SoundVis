@@ -4,7 +4,7 @@ window.Sono     = require("./libs/sono.min.js");
 var dat = require("dat-gui");
 
 window.params = {
-	numParticles:512*2,
+	numParticles:512,
 	skipCount:10
 };
 

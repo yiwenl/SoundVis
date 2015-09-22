@@ -86,6 +86,32 @@ vec3 getPosition(vec3 color) {
 	return vec3(cos(theta) * r, y, sin(theta) * r);
 }
 
+
+
+float exponentialIn(float t) {
+  return t == 0.0 ? t : pow(2.0, 10.0 * (t - 1.0));
+}
+
+float cubicIn(float t) {
+  return t * t * t;
+}
+
+#ifndef HALF_PI
+#define HALF_PI 1.5707963267948966
+#endif
+
+#ifndef PI
+#define PI 3.141592657
+#endif
+
+float sineIn(float t) {
+  return sin((t - 1.0) * HALF_PI) + 1.0;
+}
+
+float quarticIn(float t) {
+  return pow(t, 4.0);
+}
+
 uniform float time;
 uniform float skipCount;
 
@@ -96,6 +122,11 @@ void main(void) {
 			vec3 pos = texture2D(texture, vTextureCoord).rgb;
 			vec3 vel = texture2D(texture, uvVel).rgb;
 			pos += vel;
+			if(pos.y > 1000.0) {
+				pos.y = 0.0;
+				pos.x = rand(pos.xz) * 300.0 + 20.0;
+				pos.z = rand(pos.zx) * PI * 2.0;
+			}
 			gl_FragColor = vec4(pos, 1.0);
 		} else {
 			vec2 uvPos 	= vTextureCoord - vec2(.5, .0);
@@ -103,32 +134,46 @@ void main(void) {
 			vec3 pos 	= getPosition(posOrg);
 			vec3 vel 	= texture2D(texture, vTextureCoord).rgb;
 
+			//	RADIUS
 			const float posOffset = .005;
 			float ar 	= snoise(pos.x*posOffset+time, pos.y*posOffset+time, pos.z*posOffset+time) * .005;
 			vel.x 		+= ar*skipCount;
 
-			const float maxRadius = 400.0;
+			float rOffset = exponentialIn(map(pos.y, 0.0, 1500.0, 1.0, 0.0));
 			const float minRadius = 20.0;
+			float maxRadius = 300.0 * rOffset;
 			const float gravity = .001;
 			if(posOrg.r > maxRadius) {
 				vel.r -= (posOrg.r - maxRadius) * gravity;
 			} else if(posOrg.r < minRadius) {
-				vel.r += (1.0-posOrg.r/minRadius) * gravity * 10.0;
+				vel.r += (1.0-posOrg.r/minRadius) * gravity * 20.0;
 			}
 
-
+			//	ROTATION
 			float az	= snoise(pos.y*posOffset+time, pos.z*posOffset+time, pos.x*posOffset+time) * .0005;
 			vel.z 		+= az*skipCount;
-			const float minSpeed = .001;
+			const float minSpeed = .005;
 			const float maxSpeed = .01;
 			if(vel.z < minSpeed) {
-				vel.z += (1.0 - vel.z/minSpeed) * .0005;
+				vel.z += (1.0 - vel.z/minSpeed) * .001;
 			}else if(vel.z > maxSpeed) {
 				vel.z -= (vel.z - maxSpeed) * .001;
 			}
 
 
-			const float decreaseRate = .997;
+			//	RISING
+			float ay	= (snoise(pos.z*posOffset+time, pos.x*posOffset+time, pos.y*posOffset+time)+.395) * .05;
+			vel.y 		+= ay*skipCount;
+			const float minRisingSpeed = 1.0;
+			const float maxRisingSpeed = 2.5;
+			const float rotationSpeed = .1;
+			if(vel.y < minRisingSpeed) {
+				vel.y += (1.0 - vel.y/minRisingSpeed) * rotationSpeed;
+			} else if(vel.y > maxRisingSpeed) {
+				vel.y -= (vel.y - maxRisingSpeed) * rotationSpeed;
+			}
+
+			const float decreaseRate = .99;
 			vel *= decreaseRate;
 			gl_FragColor = vec4(vel, 1.0);
 		}

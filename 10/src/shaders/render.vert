@@ -9,8 +9,11 @@ uniform mat4 uPMatrix;
 uniform sampler2D texture;
 uniform sampler2D textureNext;
 uniform float percent;
+
 varying vec2 vTextureCoord;
 varying vec3 vColor;
+varying vec3 vNormal;
+varying vec3 vVertex;
 
 float map(float value, float sx, float sy, float tx, float ty) {
 	float p = clamp((value - sx) / (sy - sx), 0.0, 1.0);
@@ -58,12 +61,16 @@ void main(void) {
 	vec2 uv = aTextureCoord * .5;
 	vec3 p0 = texture2D(texture, uv).rgb;
 	vec3 p1 = texture2D(textureNext, uv).rgb;
+
 	pos.xyz = getPosition(mix(p0, p1, percent));
-
-	float rOffset = cubicIn(map(pos.y, 0.0, 1500.0, 1.0, 0.0));
-	pos.xz *= rOffset;
-
+	if(p0.y < p1.y) pos.y += 1000.0;
+	vec3 N = vec3(pos.x, pos.y*.5, pos.z);
+	vNormal = normalize(N);
 	pos.y -= 500.0;
+	
+	vVertex = pos.xyz;
+
+
     gl_Position = uPMatrix * (uMVMatrix * vec4(pos, 1.0));
     vTextureCoord = aTextureCoord;
 

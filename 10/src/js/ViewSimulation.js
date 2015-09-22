@@ -27,7 +27,7 @@ p.render = function(texture) {
 	texture.bind(0);
 	GL.draw(this.mesh);
 
-	this._count += .01;
+	this._count += .001;
 };
 
 module.exports = ViewSimulation;

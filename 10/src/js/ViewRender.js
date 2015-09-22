@@ -38,13 +38,14 @@ p._init = function() {
 	this.mesh.bufferIndices(indices);
 };
 
-p.render = function(texture, textureNext, percent) {
+p.render = function(texture, textureNext, percent, lightPos) {
 	this.shader.bind();
 	this.shader.uniform("texture", "uniform1i", 0);
 	this.shader.uniform("textureNext", "uniform1i", 1);
 	texture.bind(0);
 	textureNext.bind(1);
 	this.shader.uniform("percent", "uniform1f", 1.0-percent);
+	this.shader.uniform("lightPos", "uniform3fv", lightPos);
 	GL.draw(this.mesh);
 };
 

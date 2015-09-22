@@ -5,6 +5,8 @@ var SoundCloudLoader = require("./SoundCloudLoader");
 var ViewSave = require("./ViewSave");
 var ViewRender = require("./ViewRender");
 var ViewSimulation = require("./ViewSimulation");
+var ViewFloor = require("./ViewFloor");
+var ViewSphere = require("./ViewSphere");
 
 function SceneApp() {
 	gl = GL.gl;
@@ -13,6 +15,8 @@ function SceneApp() {
 	this.percent = 0;
 	this.easeSum = new bongiovi.EaseNumber(0, .25);
 	this._initSound();
+	this.count = 0;
+	this.lightPos = [0, 250, 0];
 	bongiovi.Scene.call(this);
 
 	window.addEventListener("resize", this.resize.bind(this));
@@ -67,6 +71,8 @@ p._initViews = function() {
 	this._vCopy 	= new bongiovi.ViewCopy();
 	this._vRender 	= new ViewRender();
 	this._vSim 		= new ViewSimulation();
+	this._vFloor	= new ViewFloor();
+	this._vSphere	= new ViewSphere();
 
 
 	GL.setMatrices(this.cameraOtho);
@@ -80,6 +86,7 @@ p._initViews = function() {
 
 
 p.updateFbo = function() {
+	console.log('update');
 	GL.setMatrices(this.cameraOtho);
 	GL.rotate(this.rotationFront);
 
@@ -102,6 +109,10 @@ p.updateFbo = function() {
 
 
 p.render = function() {
+	this.count += .005;
+	var radius = 500.0;
+	this.lightPos[0] = Math.cos(this.count) * radius;
+	this.lightPos[2] = Math.sin(this.count) * radius;
 
 	if(this.frame % params.skipCount == 0) {
 		this.updateFbo();
@@ -114,8 +125,9 @@ p.render = function() {
 	
 	this._vAxis.render();
 	this._vDotPlane.render();
-	this._vRender.render(this._fboCurrent.getTexture(), this._fboTarget.getTexture(), this.percent);
-
+	this._vRender.render(this._fboCurrent.getTexture(), this._fboTarget.getTexture(), this.percent, this.lightPos);
+	this._vSphere.render(this.lightPos);
+	this._vFloor.render();
 
 	GL.setMatrices(this.cameraOtho);
 	GL.rotate(this.rotationFront);
