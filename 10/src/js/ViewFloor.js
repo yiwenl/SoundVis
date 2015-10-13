@@ -43,8 +43,8 @@ p.render = function(texture) {
 		texture.bind(0);	
 	}
 
-	this.shader.uniform("color", "uniform3fv", [1, 1, .96]);
-	this.shader.uniform("opacity", "uniform1f", .25);
+	this.shader.uniform("color", "uniform3fv", [.25, .25, .23]);
+	this.shader.uniform("opacity", "uniform1f", 1.0);
 	
 	GL.draw(this.mesh);
 };

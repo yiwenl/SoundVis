@@ -24,29 +24,22 @@ p._init = function() {
 	var numParticles = params.numParticles;
 	var totalParticles = numParticles * numParticles;
 	console.log('Total Particles : ', totalParticles);
-	var ux, uy, r, y, theta;
-	var range = 200.0;
-
-
-	//	[RADIUS, Y, THETA]
+	var ux, uy;
+	var range = params.range;
 
 	for(var j=0; j<numParticles; j++) {
 		for(var i=0; i<numParticles; i++) {
+			//	theta, y, radius
+			positions.push([Math.random() * Math.PI * 2.0, random(-range, range), random(50, params.radius)]);
 
-			r = random(10, range);
-			y = random(0, 1000);
-			theta = random(0, Math.PI * 2.0);
-
-			positions.push([r, y, theta]);
-
-			ux = i/numParticles-1.0;
-			uy = j/numParticles-1.0;
+			ux = i/numParticles-1.0 + .5/numParticles;
+			uy = j/numParticles-1.0 + .5/numParticles;
 			coords.push([ux, uy]);
 			indices.push(count);
 			count ++;
 
-			positions.push([random(-1, 1), random(-1, 1), random(-1, 1)]);
-			coords.push([ux, uy+1.0]);
+			positions.push([Math.random(), Math.random(), Math.random()]);
+			coords.push([ux+1.0, uy+1.0]);
 			indices.push(count);
 			count ++;
 		}

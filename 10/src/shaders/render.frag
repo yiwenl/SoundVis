@@ -7,7 +7,6 @@ varying vec3 vVertex;
 
 void main(void) {
     gl_FragColor = vec4(vColor, 1.0);
-    // gl_FragColor.rgb = (vNormal * 1.0) * .5;
 
     vec3 dirToLight = lightPos - vVertex;
     float lambertFactor = max(dot(normalize(dirToLight), vNormal), 0.0);
@@ -18,4 +17,5 @@ void main(void) {
     vec3 color = ambient + lambertFactor * lightColor * lightWeight;
 
     gl_FragColor.rgb = color;
+    // gl_FragColor.rgb = (vNormal * 1.0) * .5;
 }

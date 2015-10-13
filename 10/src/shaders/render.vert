@@ -59,13 +59,16 @@ vec3 getPosition(vec3 color) {
 void main(void) {
 	vec3 pos = aVertexPosition;
 	vec2 uv = aTextureCoord * .5;
+	vec2 uvNoise = aTextureCoord * .5 + vec2(.0, .5);
 	vec3 p0 = texture2D(texture, uv).rgb;
 	vec3 p1 = texture2D(textureNext, uv).rgb;
-
+	vec3 noise = texture2D(texture, uvNoise).rgb;
+	
 	pos.xyz = getPosition(mix(p0, p1, percent));
-	if(p0.y < p1.y) pos.y += 1000.0;
+	if(p0.y < p1.y) pos.y = 1000.0;
+	
 	vec3 N = vec3(pos.x, pos.y*.5, pos.z);
-	vNormal = normalize(N);
+	vNormal = normalize(normalize(N)+noise*.75);
 	pos.y -= 500.0;
 	
 	vVertex = pos.xyz;

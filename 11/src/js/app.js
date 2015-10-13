@@ -4,21 +4,34 @@ window.Sono     = require("./libs/sono.min.js");
 var dat = require("dat-gui");
 
 window.params = {
-	numParticles:512*1.5,
-	skipCount:10
+	skipCount:10,
+	range:650,
+	radius:700,
+	numParticles:256*2,
+	debugFbo:false
 };
 
 (function() {
 	var SceneApp = require("./SceneApp");
 
 	App = function() {
+
+		var loader = new bongiovi.SimpleImageLoader();
+		var assets = ["assets/gold.jpg"];
+
+		loader.load(assets, this, this._onImageLoaded);
+		
+	}
+
+	var p = App.prototype;
+
+	p._onImageLoaded = function(imgs) {
+		window.images = imgs;
 		if(document.body) this._init();
 		else {
 			window.addEventListener("load", this._init.bind(this));
 		}
-	}
-
-	var p = App.prototype;
+	};
 
 	p._init = function() {
 		this.canvas = document.createElement("canvas");
@@ -31,14 +44,12 @@ window.params = {
 		this._scene = new SceneApp();
 		bongiovi.Scheduler.addEF(this, this._loop);
 
-		// this.gui = new dat.GUI({width:300});
-		this.stats = new Stats();
-		document.body.appendChild(this.stats.domElement);
+		this.gui = new dat.GUI({width:300});
+		this.gui.add(params, "debugFbo");
 	};
 
 	p._loop = function() {
 		this._scene.loop();
-		this.stats.update();	
 	};
 
 })();

@@ -5,28 +5,26 @@ var SoundCloudLoader = require("./SoundCloudLoader");
 var ViewSave = require("./ViewSave");
 var ViewRender = require("./ViewRender");
 var ViewSimulation = require("./ViewSimulation");
-var ViewFloor = require("./ViewFloor");
-var ViewSphere = require("./ViewSphere");
 
 function SceneApp() {
+	GL.enableAdditiveBlending();
 	gl = GL.gl;
 	this.sum = 0;
-	this.frame = 0;
-	this.percent = 0;
 	this.easeSum = new bongiovi.EaseNumber(0, .25);
-	this._initSound();
 	this.count = 0;
-	this.lightPos = [0, 250, 0];
+	this._initSound();
 	bongiovi.Scene.call(this);
+
+	this.camera.setPerspective(95 * Math.PI/180, GL.aspectRatio, 5, 2000);
 
 	window.addEventListener("resize", this.resize.bind(this));
 
 	this.camera.lockRotation(false);
 	this.sceneRotation.lock(true);
 
-	this.camera._rx.value = -.3;
+	this.camera._rx.value = -.1;
 	this.camera._ry.value = -.1;
-	this.camera.radius.value = 1500.0;
+	this.camera.radius.value = 1000;
 
 	this.resize();
 }
@@ -54,6 +52,8 @@ p._initTextures = function() {
 	console.log('Init Textures');
 	if(!gl) gl = GL.gl;
 
+	this._textureGold 	= new bongiovi.GLTexture(images.gold);
+
 	var num = params.numParticles;
 	var o = {
 		minFilter:gl.NEAREST,
@@ -71,8 +71,6 @@ p._initViews = function() {
 	this._vCopy 	= new bongiovi.ViewCopy();
 	this._vRender 	= new ViewRender();
 	this._vSim 		= new ViewSimulation();
-	this._vFloor	= new ViewFloor();
-	this._vSphere	= new ViewSphere();
 
 
 	GL.setMatrices(this.cameraOtho);
@@ -86,7 +84,6 @@ p._initViews = function() {
 
 
 p.updateFbo = function() {
-	console.log('update');
 	GL.setMatrices(this.cameraOtho);
 	GL.rotate(this.rotationFront);
 
@@ -109,33 +106,32 @@ p.updateFbo = function() {
 
 
 p.render = function() {
-	this.count += .005;
-	var radius = 500.0;
-	this.lightPos[0] = Math.cos(this.count) * radius;
-	this.lightPos[2] = Math.sin(this.count) * radius;
-
-	if(this.frame % params.skipCount == 0) {
+	if(this.count % params.skipCount == 0) {
 		this.updateFbo();
-		this.frame = 0;
+		this.count = 0;	
 	}
-	this.percent = this.frame / params.skipCount;
+
+	this.count ++;
+
+	var percent = this.count / params.skipCount;
 	
 	GL.setViewport(0, 0, GL.width, GL.height);
 	this._getSoundData();
 	
 	this._vAxis.render();
 	this._vDotPlane.render();
-	this._vRender.render(this._fboCurrent.getTexture(), this._fboTarget.getTexture(), this.percent, this.lightPos);
-	this._vSphere.render(this.lightPos);
-	this._vFloor.render();
+	
+	this._vRender.render(this._fboTarget.getTexture(), this._fboCurrent.getTexture(), percent, this._textureGold);
+	// GL.enableAlpha
 
-	GL.setMatrices(this.cameraOtho);
-	GL.rotate(this.rotationFront);
+	if(params.debugFbo) {
+		GL.setMatrices(this.cameraOtho);
+		GL.rotate(this.rotationFront);
 
-	// GL.setViewport(0, 0, this._fboCurrent.width, this._fboCurrent.height);
-	// this._vCopy.render(this._fboCurrent.getTexture());
-
-	this.frame++;
+		GL.setViewport(0, 0, this._fboCurrent.width, this._fboCurrent.height);
+		this._vCopy.render(this._fboCurrent.getTexture());	
+	}
+	
 };
 
 
