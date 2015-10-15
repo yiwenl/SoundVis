@@ -4431,12 +4431,12 @@ function SceneApp() {
 	GL.enableAdditiveBlending();
 	gl = GL.gl;
 	this.sum = 0;
-	this.easeSum = new bongiovi.EaseNumber(0, .25);
+	this.easeSum = new bongiovi.EaseNumber(0, .1);
 	this.count = 0;
 	this._initSound();
 	bongiovi.Scene.call(this);
 
-	this.camera.setPerspective(95 * Math.PI/180, GL.aspectRatio, 5, 2000);
+	this.camera.setPerspective(75 * Math.PI/180, GL.aspectRatio, 5, 2000);
 
 	window.addEventListener("resize", this.resize.bind(this));
 
@@ -4446,6 +4446,8 @@ function SceneApp() {
 	this.camera._rx.value = -.1;
 	this.camera._ry.value = -.1;
 	this.camera.radius.value = 1000;
+	// console.log(this.camera.center);
+	this.camera.center[1] = -params.range * .75;
 
 	this.resize();
 }
@@ -4458,8 +4460,8 @@ p._initSound = function() {
 	this.soundOffset = 0;
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
-	    url: ['assets/audio/Oscillate.mp3'],
-	    volume: 0.0,
+	    url: ['assets/audio/04.mp3'],
+	    volume: 1.0,
 	    loop: true,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded");
@@ -4511,7 +4513,7 @@ p.updateFbo = function() {
 	this._fboTarget.bind();
 	GL.setViewport(0, 0, this._fboCurrent.width, this._fboCurrent.height);
 	GL.clear(0, 0, 0, 0);
-	this._vSim.render(this._fboCurrent.getTexture() );
+	this._vSim.render(this._fboCurrent.getTexture(), this.sum, this.easeSum.value );
 	this._fboTarget.unbind();
 
 
@@ -4527,6 +4529,8 @@ p.updateFbo = function() {
 
 
 p.render = function() {
+	// this.camera._ry.value += this.sum*.00001;
+	this.camera._ry.value += this.easeSum.value*.01;
 	if(this.count % params.skipCount == 0) {
 		this.updateFbo();
 		this.count = 0;	
@@ -4574,17 +4578,16 @@ p._getSoundData = function() {
 	}
 
 	sum /= f.length;
-	var threshold = 10;
-	var maxSpeed = 2.0;
+	var maxSpeed = params.maxSpeed;
 
-	if(sum > threshold) {
+	if(sum > params.threshold) {
 		this.sum += sum * 1.5;
-		this.easeSum.value = Math.min(this.sum, maxSpeed) * .1;
+		this.easeSum.value = Math.min(this.sum, maxSpeed);
 	} else {
 		this.easeSum.value = 0;
 	}
 
-	this.sum -= this.sum * .1;
+	this.sum -= this.sum * params.decreaseRate;
 	if(this.sum < 0) this.sum = 0;
 };
 
@@ -4671,7 +4674,7 @@ var gl;
 
 function ViewRender() {
 	this.time = 0;
-	bongiovi.View.call(this, "#define GLSLIFY 1\n// line.vert\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform sampler2D texture;\nuniform sampler2D textureNext;\nuniform sampler2D textureGold;\nuniform float percent;\nuniform float range;\nuniform float time;\nvarying vec2 vTextureCoord;\nvarying vec4 vColor;\nvarying float vOpacity;\n\nvec3 getPosition(vec3 value) {\n\tvec3 pos;\n\n\tpos.x = cos(value.x) * value.z;\n\tpos.z = sin(value.x) * value.z;\n\tpos.y = value.y;\n\n\treturn pos;\n}\n\nvoid main(void) {\n\tvec3 pos      = aVertexPosition;\n\tvec2 uv       = aTextureCoord * .5;\n\tvec2 uvGold   = aTextureCoord + vec2(time, .0);\n\tif(uvGold.x > 1.0) uvGold.x -= 1.0;\n\tvec2 uvExtra  = uv + vec2(.5);\n\tvec3 curr     = getPosition(texture2D(texture, uv).rgb);\n\tvec3 next     = getPosition(texture2D(textureNext, uv).rgb);\n\tvec3 extra     = getPosition(texture2D(textureNext, uvExtra).rgb);\n\tif(next.y < curr.y-range) next.y += range * 2.0;\n\tpos \t\t  = mix(curr, next, percent);\n\n\tgl_Position   = uPMatrix * uMVMatrix * vec4(pos+vec3(0.0, 150.0, 0.0), 1.0);\n\tvTextureCoord = aTextureCoord;\n\t\n\tgl_PointSize  = .5 + extra.r * 1.5;\n\n\n\tfloat opacity = 1.0;\n\tconst float fadeRange = 50.0;\n\tif(pos.y > range - fadeRange) opacity = clamp((range - pos.y) / fadeRange, 0.0, 1.0);\n\tvec3 colorGold = texture2D(textureGold, uvGold).rgb;\n    vColor = vec4(colorGold, 1.0);\n    vOpacity = opacity;\n    // vColor = vec4(.1);\n}", "#define GLSLIFY 1\nprecision mediump float;\n\nvarying vec4 vColor;\nvarying float vOpacity;\n\nvoid main(void) {\n    gl_FragColor = vColor;\n    gl_FragColor *= vOpacity;\n}");
+	bongiovi.View.call(this, "#define GLSLIFY 1\n// line.vert\n\nprecision highp float;\nattribute vec3 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat4 uMVMatrix;\nuniform mat4 uPMatrix;\nuniform sampler2D texture;\nuniform sampler2D textureNext;\nuniform sampler2D textureGold;\nuniform float percent;\nuniform float range;\nuniform float time;\nvarying vec2 vTextureCoord;\nvarying vec4 vColor;\nvarying float vOpacity;\n\nvec3 getPosition(vec3 value) {\n\tvec3 pos;\n\n\tpos.x = cos(value.x) * value.z;\n\tpos.z = sin(value.x) * value.z;\n\tpos.y = value.y;\n\n\treturn pos;\n}\n\nvoid main(void) {\n\tvec3 pos                         = aVertexPosition;\n\tvec2 uv                          = aTextureCoord * .5;\n\tvec2 uvGold                      = aTextureCoord + vec2(time, .0);\n\tif(uvGold.x > 1.0) uvGold.x      -= 1.0;\n\tvec2 uvExtra                     = uv + vec2(.5);\n\tvec2 uvLife                      = uv + vec2(.0, .5);\n\tvec3 curr                        = getPosition(texture2D(texture, uv).rgb);\n\tvec3 next                        = getPosition(texture2D(textureNext, uv).rgb);\n\tvec3 extra                       = getPosition(texture2D(textureNext, uvExtra).rgb);\n\tfloat lifeCurr                   = texture2D(texture, uvLife).r;\n\tfloat lifeNext                   = texture2D(textureNext, uvLife).r;\n\tfloat life;\n\tif(lifeNext < lifeCurr) {\n\t\tlife = lifeNext;\n\t} else {\n\t\tlife = mix(lifeCurr, lifeNext, percent);\n\t}\n\n\tfloat opacityOffset = 1.0;\n\tif(next.y < curr.y-range) {\n\t\tnext.y += range * 2.0;\n\t\topacityOffset = 0.0;\n\t}\n\tpos                              = mix(curr, next, percent);\n\tif(pos.y < -range)\t\t\t\t pos.y = -range;\n\t\n\tgl_Position                      = uPMatrix * uMVMatrix * vec4(pos+vec3(0.0, range, 0.0), 1.0);\n\tvTextureCoord                    = aTextureCoord;\n\t\n\tgl_PointSize                     = .5 + extra.r * 1.5;\n\n\n\tfloat opacity = 1.0;\n\tconst float fadeRange = 100.0;\n\n\tfloat y = min(pos.y, range);\n\tif(y > range - fadeRange) opacity = clamp((range - y) / fadeRange, 0.0, 1.0);\n\tvec3 colorGold = texture2D(textureGold, uvGold).rgb;\n    vColor = vec4(colorGold, 1.0);\n\n    float lifeOffset = 1.0;\n    const float minLife = 60.0;\n    if(life < minLife) opacity *= max(life, 0.0)/minLife;\n\n    vOpacity = opacity * opacityOffset;\n    // vColor = vec4(.1);\n}", "#define GLSLIFY 1\nprecision mediump float;\n\nvarying vec4 vColor;\nvarying float vOpacity;\n\nvoid main(void) {\n    gl_FragColor = vColor;\n    gl_FragColor *= vOpacity;\n}");
 }
 
 var p = ViewRender.prototype = new bongiovi.View();
@@ -4763,6 +4766,12 @@ p._init = function() {
 			indices.push(count);
 			count ++;
 
+
+			positions.push([Math.random()*2000, Math.random(), Math.random()]);
+			coords.push([ux, uy+1.0]);
+			indices.push(count);
+			count ++;
+
 			positions.push([Math.random(), Math.random(), Math.random()]);
 			coords.push([ux+1.0, uy+1.0]);
 			indices.push(count);
@@ -4793,7 +4802,8 @@ var gl;
 
 function ViewSimulation() {
 	this._count = Math.random() * 0xFF;
-	bongiovi.View.call(this, null, "#define GLSLIFY 1\n// sim.frag\n\nprecision mediump float;\nuniform sampler2D texture;\nvarying vec2 vTextureCoord;\n\n\nvec4 permute(vec4 x) { return mod(((x*34.00)+1.00)*x, 289.00); }\nvec4 taylorInvSqrt(vec4 r) { return 1.79 - 0.85 * r; }\n\nfloat snoise(vec3 v){\n\tconst vec2 C = vec2(1.00/6.00, 1.00/3.00) ;\n\tconst vec4 D = vec4(0.00, 0.50, 1.00, 2.00);\n\t\n\tvec3 i = floor(v + dot(v, C.yyy) );\n\tvec3 x0 = v - i + dot(i, C.xxx) ;\n\t\n\tvec3 g = step(x0.yzx, x0.xyz);\n\tvec3 l = 1.00 - g;\n\tvec3 i1 = min( g.xyz, l.zxy );\n\tvec3 i2 = max( g.xyz, l.zxy );\n\t\n\tvec3 x1 = x0 - i1 + 1.00 * C.xxx;\n\tvec3 x2 = x0 - i2 + 2.00 * C.xxx;\n\tvec3 x3 = x0 - 1. + 3.00 * C.xxx;\n\t\n\ti = mod(i, 289.00 );\n\tvec4 p = permute( permute( permute( i.z + vec4(0.00, i1.z, i2.z, 1.00 )) + i.y + vec4(0.00, i1.y, i2.y, 1.00 )) + i.x + vec4(0.00, i1.x, i2.x, 1.00 ));\n\t\n\tfloat n_ = 1.00/7.00;\n\tvec3 ns = n_ * D.wyz - D.xzx;\n\t\n\tvec4 j = p - 49.00 * floor(p * ns.z *ns.z);\n\t\n\tvec4 x_ = floor(j * ns.z);\n\tvec4 y_ = floor(j - 7.00 * x_ );\n\t\n\tvec4 x = x_ *ns.x + ns.yyyy;\n\tvec4 y = y_ *ns.x + ns.yyyy;\n\tvec4 h = 1.00 - abs(x) - abs(y);\n\t\n\tvec4 b0 = vec4( x.xy, y.xy );\n\tvec4 b1 = vec4( x.zw, y.zw );\n\t\n\tvec4 s0 = floor(b0)*2.00 + 1.00;\n\tvec4 s1 = floor(b1)*2.00 + 1.00;\n\tvec4 sh = -step(h, vec4(0.00));\n\t\n\tvec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;\n\tvec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;\n\t\n\tvec3 p0 = vec3(a0.xy,h.x);\n\tvec3 p1 = vec3(a0.zw,h.y);\n\tvec3 p2 = vec3(a1.xy,h.z);\n\tvec3 p3 = vec3(a1.zw,h.w);\n\t\n\tvec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));\n\tp0 *= norm.x;\n\tp1 *= norm.y;\n\tp2 *= norm.z;\n\tp3 *= norm.w;\n\t\n\tvec4 m = max(0.60 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.00);\n\tm = m * m;\n\treturn 42.00 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );\n}\n\nfloat snoise(float x, float y, float z){\n\treturn snoise(vec3(x, y, z));\n}\n\nfloat rand(vec2 co){\n    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);\n}\n\nvec3 getPosition(vec3 value) {\n\tvec3 pos;\n\n\tpos.x = cos(value.x) * value.z;\n\tpos.z = sin(value.x) * value.z;\n\tpos.y = value.y;\n\n\treturn pos;\n}\n\nconst float PI = 3.141592657;\nuniform float range;\nuniform float radius;\nuniform float time;\n\nconst float minRadius = 1.0;\n\nfloat cubicIn(float t) {\n  return t * t * t;\n}\n\nfloat exponentialIn(float t) {\n  return t == 0.0 ? t : pow(2.0, 10.0 * (t - 1.0));\n}\n\nfloat exponentialOut(float t) {\n  return t == 1.0 ? t : 1.0 - pow(2.0, -10.0 * t);\n}\n\nvoid main(void) {\n    if(vTextureCoord.y < .5) {\n\t\tif(vTextureCoord.x < .5) {\n\t\t\tvec2 uvVel  = vTextureCoord + vec2(.5, .0);\n\t\t\tvec3 pos = texture2D(texture, vTextureCoord).rgb;\n\t\t\tvec3 vel = texture2D(texture, uvVel).rgb;\n\t\t\tpos += vel;\n\t\t\tif(pos.x > PI * 2.0) pos.x -= PI * 2.0;\n\t\t\tif(pos.y > range) {\n\t\t\t\tpos.y -= range*2.0;\n\t\t\t\t// pos.z = mix(rand(vec2(time, pos.x)), 1.0, .1) * radius;\n\t\t\t\tpos.z = mix(rand(vec2(time)), 1.0, .1) * radius;\n\t\t\t}\n\t\t\tgl_FragColor = vec4(pos, 1.0);\n\t\t} else {\n\t\t\tvec2 uvPos      = vTextureCoord - vec2(.5, .0);\n\t\t\tvec2 uvExtra    = vTextureCoord + vec2(.5, .5);\n\t\t\tvec3 orgPos     = texture2D(texture, uvPos).rgb;\n\t\t\tvec3 vel        = texture2D(texture, vTextureCoord).rgb;\n\t\t\tvec3 extra      = texture2D(texture, uvExtra).rgb;\n\t\t\tvec3 pos        = getPosition(orgPos);\n\t\t\t\n\t\t\tfloat posOffset = .005 * mix(extra.r, 1.0, .85);\n\t\t\tfloat aRotation = .025 * mix(extra.g, 1.0, .85);\n\t\t\tfloat aRadius   = .25 * mix(extra.b, 1.0, .85);\n\t\t\tconst float aY  = .5;\n\t\t\tfloat ax        = (snoise(pos.x * posOffset + time, pos.y * posOffset + time, pos.z * posOffset + time)+.35) * aRotation;\n\t\t\tfloat ay        = (snoise(pos.y * posOffset + time, pos.z * posOffset + time, pos.x * posOffset + time)+.65) * aY;\n\t\t\tfloat az        = snoise(pos.z * posOffset + time, pos.x * posOffset + time, pos.y * posOffset + time) * aRadius;\n\n\t\t\tvel += vec3(ax, ay, az);\n\n\t\t\tfloat percentY = 1.0 - (pos.y + range) / range * 2.0;\n\t\t\tpercentY = exponentialIn(percentY);\n\t\t\tfloat maxRadius = radius * mix(percentY, 1.0, .1);\n\t\t\tfloat f;\n\t\t\tif(orgPos.z < minRadius) {\n\t\t\t\tfloat tz = max(orgPos.z, 0.01);\n\t\t\t\tf = 1.0/(tz/minRadius);\n\t\t\t\tvel.z += f * .002;\n\t\t\t} else if(orgPos.z > maxRadius) {\n\t\t\t\tf = orgPos.z - maxRadius;\n\t\t\t\tvel.z -= f * .001;\n\t\t\t}\n\n\t\t\tconst float maxRotSpeed = .05;\n\t\t\tif(vel.x > maxRotSpeed) {\n\t\t\t\tfloat f = vel.x - maxRotSpeed;\n\t\t\t\tvel.x -= f * .1;\n\t\t\t}\n\n\t\t\tconst float decreaseRate = .945;\n\t\t\tvel *= decreaseRate;\n\n\t\t\tgl_FragColor = vec4(vel, 1.0);\t\n\t\t}\n    } else {\n    \tgl_FragColor = texture2D(texture, vTextureCoord);\n    }\n}");
+	this.max = 0;
+	bongiovi.View.call(this, null, "#define GLSLIFY 1\n// sim.frag\n\nprecision mediump float;\nuniform sampler2D texture;\nvarying vec2 vTextureCoord;\n\n\nvec4 permute(vec4 x) { return mod(((x*34.00)+1.00)*x, 289.00); }\nvec4 taylorInvSqrt(vec4 r) { return 1.79 - 0.85 * r; }\n\nfloat snoise(vec3 v){\n\tconst vec2 C = vec2(1.00/6.00, 1.00/3.00) ;\n\tconst vec4 D = vec4(0.00, 0.50, 1.00, 2.00);\n\t\n\tvec3 i = floor(v + dot(v, C.yyy) );\n\tvec3 x0 = v - i + dot(i, C.xxx) ;\n\t\n\tvec3 g = step(x0.yzx, x0.xyz);\n\tvec3 l = 1.00 - g;\n\tvec3 i1 = min( g.xyz, l.zxy );\n\tvec3 i2 = max( g.xyz, l.zxy );\n\t\n\tvec3 x1 = x0 - i1 + 1.00 * C.xxx;\n\tvec3 x2 = x0 - i2 + 2.00 * C.xxx;\n\tvec3 x3 = x0 - 1. + 3.00 * C.xxx;\n\t\n\ti = mod(i, 289.00 );\n\tvec4 p = permute( permute( permute( i.z + vec4(0.00, i1.z, i2.z, 1.00 )) + i.y + vec4(0.00, i1.y, i2.y, 1.00 )) + i.x + vec4(0.00, i1.x, i2.x, 1.00 ));\n\t\n\tfloat n_ = 1.00/7.00;\n\tvec3 ns = n_ * D.wyz - D.xzx;\n\t\n\tvec4 j = p - 49.00 * floor(p * ns.z *ns.z);\n\t\n\tvec4 x_ = floor(j * ns.z);\n\tvec4 y_ = floor(j - 7.00 * x_ );\n\t\n\tvec4 x = x_ *ns.x + ns.yyyy;\n\tvec4 y = y_ *ns.x + ns.yyyy;\n\tvec4 h = 1.00 - abs(x) - abs(y);\n\t\n\tvec4 b0 = vec4( x.xy, y.xy );\n\tvec4 b1 = vec4( x.zw, y.zw );\n\t\n\tvec4 s0 = floor(b0)*2.00 + 1.00;\n\tvec4 s1 = floor(b1)*2.00 + 1.00;\n\tvec4 sh = -step(h, vec4(0.00));\n\t\n\tvec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy ;\n\tvec4 a1 = b1.xzyw + s1.xzyw*sh.zzww ;\n\t\n\tvec3 p0 = vec3(a0.xy,h.x);\n\tvec3 p1 = vec3(a0.zw,h.y);\n\tvec3 p2 = vec3(a1.xy,h.z);\n\tvec3 p3 = vec3(a1.zw,h.w);\n\t\n\tvec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2, p2), dot(p3,p3)));\n\tp0 *= norm.x;\n\tp1 *= norm.y;\n\tp2 *= norm.z;\n\tp3 *= norm.w;\n\t\n\tvec4 m = max(0.60 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.00);\n\tm = m * m;\n\treturn 42.00 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );\n}\n\nfloat snoise(float x, float y, float z){\n\treturn snoise(vec3(x, y, z));\n}\n\nfloat rand(vec2 co){\n    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);\n}\n\nvec3 getPosition(vec3 value) {\n\tvec3 pos;\n\n\tpos.x = cos(value.x) * value.z;\n\tpos.z = sin(value.x) * value.z;\n\tpos.y = value.y;\n\n\treturn pos;\n}\n\nconst float PI = 3.141592657;\nuniform float range;\nuniform float radius;\nuniform float sum;\nuniform float easeSum;\nuniform float time;\nuniform float mixture;\n\nconst float minRadius = 1.0;\n\nfloat cubicIn(float t) {\n  return t * t * t;\n}\n\nfloat exponentialIn(float t) {\n  return t == 0.0 ? t : pow(2.0, 10.0 * (t - 1.0));\n}\n\nfloat exponentialOut(float t) {\n  return t == 1.0 ? t : 1.0 - pow(2.0, -10.0 * t);\n}\n\nvoid main(void) {\n    if(vTextureCoord.y < .5) {\n\t\tif(vTextureCoord.x < .5) {\n\t\t\tvec2 uvVel  = vTextureCoord + vec2(.5, .0);\n\t\t\tvec2 uvLife = vTextureCoord + vec2(.0, .5);\n\t\t\tvec3 pos    = texture2D(texture, vTextureCoord).rgb;\n\t\t\tvec3 vel    = texture2D(texture, uvVel).rgb;\n\t\t\tfloat life  = texture2D(texture, uvLife).r;\n\t\t\tpos += vel;\n\t\t\tif(pos.x > PI * 2.0) pos.x -= PI * 2.0;\n\t\t\tif(pos.y > range || life < 0.0) {\n\t\t\t\tpos.y = -range - 10.0;\n\t\t\t\tfloat randR = (rand(vec2(time))*.3 + easeSum*.1) * .9;\n\t\t\t\tpos.z = randR * radius ;\n\t\t\t}\n\t\t\tgl_FragColor = vec4(pos, 1.0);\n\t\t} else {\n\t\t\tvec2 uvPos      = vTextureCoord - vec2(.5, .0);\n\t\t\tvec2 uvExtra    = vTextureCoord + vec2(.5, .5);\n\t\t\tvec3 orgPos     = texture2D(texture, uvPos).rgb;\n\t\t\tvec3 vel        = texture2D(texture, vTextureCoord).rgb;\n\t\t\tvec3 extra      = texture2D(texture, uvExtra).rgb;\n\t\t\tvec3 pos        = getPosition(orgPos);\n\t\t\t\n\t\t\t// const float mixture = .9;\n\t\t\tfloat posOffset = .005 * mix(extra.r, 1.0, mixture);\n\t\t\tfloat aRotation = .025 * mix(extra.g, 1.0, mixture);\n\t\t\tfloat aRadius   = .25 * mix(extra.b, 1.0, mixture);\n\t\t\tconst float aY  = .5;\n\t\t\tfloat ax        = (snoise(pos.x * posOffset + time, pos.y * posOffset + time, pos.z * posOffset + time)+.35) * aRotation;\n\t\t\tfloat ay        = (snoise(pos.y * posOffset + time, pos.z * posOffset + time, pos.x * posOffset + time)+.65) * aY;\n\t\t\tfloat az        = snoise(pos.z * posOffset + time, pos.x * posOffset + time, pos.y * posOffset + time) * aRadius;\n\n\t\t\tvel += vec3(ax, ay, az);\n\n\t\t\tfloat percentY = 1.0 - (pos.y + range) / range * 2.0;\n\t\t\tpercentY = exponentialIn(percentY);\n\t\t\tfloat maxRadius = radius * mix(percentY, 1.0, .075);\n\t\t\tfloat f;\n\t\t\tif(orgPos.z < minRadius) {\n\t\t\t\tfloat tz = max(orgPos.z, 0.01);\n\t\t\t\tf = 1.0/(tz/minRadius);\n\t\t\t\tvel.z += f * .002;\n\t\t\t} else if(orgPos.z > maxRadius) {\n\t\t\t\tf = orgPos.z - maxRadius;\n\t\t\t\tvel.z -= f * .002;\n\t\t\t}\n\n\t\t\tconst float maxRotSpeed = .05;\n\t\t\tif(vel.x > maxRotSpeed) {\n\t\t\t\tfloat f = vel.x - maxRotSpeed;\n\t\t\t\tvel.x -= f * .1;\n\t\t\t}\n\n\t\t\tconst float decreaseRate = .945;\n\t\t\tvel *= decreaseRate;\n\n\t\t\tif(pos.y < -range) {\n\t\t\t\tfloat speedOffst = min(1.0, easeSum/8.0);\n\t\t\t\tvel *= exponentialIn(speedOffst) * 1.0 + .75;\n\t\t\t}\n\n\t\t\tgl_FragColor = vec4(vel, 1.0);\t\n\t\t}\n    } else {\n    \tif(vTextureCoord.x < .5) {\n    \t\tvec2 uvPos = vTextureCoord - vec2(.0, .5);\n    \t\tvec2 uvExtra = vTextureCoord + vec2(.5, .0);\n    \t\tvec3 life = texture2D(texture, vTextureCoord).rgb;\n    \t\tvec3 pos = texture2D(texture, uvPos).rgb;\n    \t\tvec3 extra = texture2D(texture, uvExtra).rgb;\n    \t\tconst float cap = 1450.0;\n    \t\tfloat s = min(sum, cap) / cap;\n    \t\ts = exponentialIn(s);\n\n    \t\tif(pos.y < -range) life.x = s * cap * (1.0 + extra.b);\n    \t\tconst float lifeDecrease = 5.0;\n    \t\tlife -= lifeDecrease;\n\n    \t\tgl_FragColor = vec4(life, 1.0);\n\t\t} else {\n\t\t\tgl_FragColor = texture2D(texture, vTextureCoord);\t\t\n\t\t}\n    \t\n    }\n}");
 }
 
 var p = ViewSimulation.prototype = new bongiovi.View();
@@ -4804,18 +4814,21 @@ p._init = function() {
 	this.mesh = bongiovi.MeshUtils.createPlane(2, 2, 1);
 };
 
-p.render = function(texture) {
+p.render = function(texture, sum, easeSum) {
 	if(!this.shader.isReady() ) return;
-
 	this.shader.bind();
 	this.shader.uniform("texture", "uniform1i", 0);
 	this.shader.uniform("time", "uniform1f", this._count);
 	this.shader.uniform("range", "uniform1f", params.range);
 	this.shader.uniform("radius", "uniform1f", params.radius);
+	this.shader.uniform("sum", "uniform1f", sum);
+	this.shader.uniform("easeSum", "uniform1f", easeSum);
+	this.shader.uniform("mixture", "uniform1f", params.mixture);
 	texture.bind(0);
+
 	GL.draw(this.mesh);
 
-	this._count += .005;
+	this._count += params.speed;
 };
 
 module.exports = ViewSimulation;
@@ -4829,7 +4842,13 @@ window.params = {
 	skipCount:10,
 	range:650,
 	radius:700,
-	numParticles:256*2,
+	numParticles:256,
+
+	speed:.01,
+	mixture:.9,
+	threshold:50,
+	decreaseRate:.1,
+	maxSpeed:5.0,
 	debugFbo:false
 };
 
@@ -4868,6 +4887,12 @@ window.params = {
 
 		this.gui = new dat.GUI({width:300});
 		this.gui.add(params, "debugFbo");
+		this.gui.add(params, "threshold", 0, 100);
+		this.gui.add(params, "decreaseRate", 0, .500);
+		this.gui.add(params, "maxSpeed", 1, 10.00);
+		this.gui.add(params, "speed", 0.01, .05);
+		this.gui.add(params, "mixture", 0.0, 1.0);
+		// this.gui.add(params, "skipCount", 1, 100.00);
 	};
 
 	p._loop = function() {

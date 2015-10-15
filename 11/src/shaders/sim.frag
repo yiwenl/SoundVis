@@ -86,7 +86,10 @@ vec3 getPosition(vec3 value) {
 const float PI = 3.141592657;
 uniform float range;
 uniform float radius;
+uniform float sum;
+uniform float easeSum;
 uniform float time;
+uniform float mixture;
 
 const float minRadius = 1.0;
 
@@ -106,14 +109,16 @@ void main(void) {
     if(vTextureCoord.y < .5) {
 		if(vTextureCoord.x < .5) {
 			vec2 uvVel  = vTextureCoord + vec2(.5, .0);
-			vec3 pos = texture2D(texture, vTextureCoord).rgb;
-			vec3 vel = texture2D(texture, uvVel).rgb;
+			vec2 uvLife = vTextureCoord + vec2(.0, .5);
+			vec3 pos    = texture2D(texture, vTextureCoord).rgb;
+			vec3 vel    = texture2D(texture, uvVel).rgb;
+			float life  = texture2D(texture, uvLife).r;
 			pos += vel;
 			if(pos.x > PI * 2.0) pos.x -= PI * 2.0;
-			if(pos.y > range) {
-				pos.y -= range*2.0;
-				// pos.z = mix(rand(vec2(time, pos.x)), 1.0, .1) * radius;
-				pos.z = mix(rand(vec2(time)), 1.0, .1) * radius;
+			if(pos.y > range || life < 0.0) {
+				pos.y = -range - 10.0;
+				float randR = (rand(vec2(time))*.3 + easeSum*.1) * .9;
+				pos.z = randR * radius ;
 			}
 			gl_FragColor = vec4(pos, 1.0);
 		} else {
@@ -124,9 +129,10 @@ void main(void) {
 			vec3 extra      = texture2D(texture, uvExtra).rgb;
 			vec3 pos        = getPosition(orgPos);
 			
-			float posOffset = .005 * mix(extra.r, 1.0, .85);
-			float aRotation = .025 * mix(extra.g, 1.0, .85);
-			float aRadius   = .25 * mix(extra.b, 1.0, .85);
+			// const float mixture = .9;
+			float posOffset = .005 * mix(extra.r, 1.0, mixture);
+			float aRotation = .025 * mix(extra.g, 1.0, mixture);
+			float aRadius   = .25 * mix(extra.b, 1.0, mixture);
 			const float aY  = .5;
 			float ax        = (snoise(pos.x * posOffset + time, pos.y * posOffset + time, pos.z * posOffset + time)+.35) * aRotation;
 			float ay        = (snoise(pos.y * posOffset + time, pos.z * posOffset + time, pos.x * posOffset + time)+.65) * aY;
@@ -136,7 +142,7 @@ void main(void) {
 
 			float percentY = 1.0 - (pos.y + range) / range * 2.0;
 			percentY = exponentialIn(percentY);
-			float maxRadius = radius * mix(percentY, 1.0, .1);
+			float maxRadius = radius * mix(percentY, 1.0, .075);
 			float f;
 			if(orgPos.z < minRadius) {
 				float tz = max(orgPos.z, 0.01);
@@ -144,7 +150,7 @@ void main(void) {
 				vel.z += f * .002;
 			} else if(orgPos.z > maxRadius) {
 				f = orgPos.z - maxRadius;
-				vel.z -= f * .001;
+				vel.z -= f * .002;
 			}
 
 			const float maxRotSpeed = .05;
@@ -156,9 +162,32 @@ void main(void) {
 			const float decreaseRate = .945;
 			vel *= decreaseRate;
 
+			if(pos.y < -range) {
+				float speedOffst = min(1.0, easeSum/8.0);
+				vel *= exponentialIn(speedOffst) * 1.0 + .75;
+			}
+
 			gl_FragColor = vec4(vel, 1.0);	
 		}
     } else {
-    	gl_FragColor = texture2D(texture, vTextureCoord);
+    	if(vTextureCoord.x < .5) {
+    		vec2 uvPos = vTextureCoord - vec2(.0, .5);
+    		vec2 uvExtra = vTextureCoord + vec2(.5, .0);
+    		vec3 life = texture2D(texture, vTextureCoord).rgb;
+    		vec3 pos = texture2D(texture, uvPos).rgb;
+    		vec3 extra = texture2D(texture, uvExtra).rgb;
+    		const float cap = 1450.0;
+    		float s = min(sum, cap) / cap;
+    		s = exponentialIn(s);
+
+    		if(pos.y < -range) life.x = s * cap * (1.0 + extra.b);
+    		const float lifeDecrease = 5.0;
+    		life -= lifeDecrease;
+
+    		gl_FragColor = vec4(life, 1.0);
+		} else {
+			gl_FragColor = texture2D(texture, vTextureCoord);		
+		}
+    	
     }
 }

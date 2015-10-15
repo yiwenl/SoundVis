@@ -38,6 +38,12 @@ p._init = function() {
 			indices.push(count);
 			count ++;
 
+
+			positions.push([Math.random()*2000, Math.random(), Math.random()]);
+			coords.push([ux, uy+1.0]);
+			indices.push(count);
+			count ++;
+
 			positions.push([Math.random(), Math.random(), Math.random()]);
 			coords.push([ux+1.0, uy+1.0]);
 			indices.push(count);

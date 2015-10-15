@@ -7,7 +7,13 @@ window.params = {
 	skipCount:10,
 	range:650,
 	radius:700,
-	numParticles:256*2,
+	numParticles:256,
+
+	speed:.01,
+	mixture:.9,
+	threshold:50,
+	decreaseRate:.1,
+	maxSpeed:5.0,
 	debugFbo:false
 };
 
@@ -46,6 +52,12 @@ window.params = {
 
 		this.gui = new dat.GUI({width:300});
 		this.gui.add(params, "debugFbo");
+		this.gui.add(params, "threshold", 0, 100);
+		this.gui.add(params, "decreaseRate", 0, .500);
+		this.gui.add(params, "maxSpeed", 1, 10.00);
+		this.gui.add(params, "speed", 0.01, .05);
+		this.gui.add(params, "mixture", 0.0, 1.0);
+		// this.gui.add(params, "skipCount", 1, 100.00);
 	};
 
 	p._loop = function() {

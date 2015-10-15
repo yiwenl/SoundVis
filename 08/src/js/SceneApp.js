@@ -60,8 +60,8 @@ p._initSound = function() {
 	this.soundOffset = 0;
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
-	    // url: ['assets/audio/03.mp3'],
-	    url: ['assets/audio/Oscillate.mp3'],
+	    url: ['assets/audio/03.mp3'],
+	    // url: ['assets/audio/Oscillate.mp3'],
 	    volume: 0.0,
 	    loop: true,
 	    onComplete: function(sound) {

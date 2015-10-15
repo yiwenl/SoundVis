@@ -10,12 +10,12 @@ function SceneApp() {
 	GL.enableAdditiveBlending();
 	gl = GL.gl;
 	this.sum = 0;
-	this.easeSum = new bongiovi.EaseNumber(0, .25);
+	this.easeSum = new bongiovi.EaseNumber(0, .1);
 	this.count = 0;
 	this._initSound();
 	bongiovi.Scene.call(this);
 
-	this.camera.setPerspective(95 * Math.PI/180, GL.aspectRatio, 5, 2000);
+	this.camera.setPerspective(75 * Math.PI/180, GL.aspectRatio, 5, 2000);
 
 	window.addEventListener("resize", this.resize.bind(this));
 
@@ -25,6 +25,8 @@ function SceneApp() {
 	this.camera._rx.value = -.1;
 	this.camera._ry.value = -.1;
 	this.camera.radius.value = 1000;
+	// console.log(this.camera.center);
+	this.camera.center[1] = -params.range * .75;
 
 	this.resize();
 }
@@ -37,8 +39,8 @@ p._initSound = function() {
 	this.soundOffset = 0;
 	this.preSoundOffset = 0;
 	this.sound = Sono.load({
-	    url: ['assets/audio/Oscillate.mp3'],
-	    volume: 0.0,
+	    url: ['assets/audio/04.mp3'],
+	    volume: 1.0,
 	    loop: true,
 	    onComplete: function(sound) {
 	    	console.debug("Sound Loaded");
@@ -90,7 +92,7 @@ p.updateFbo = function() {
 	this._fboTarget.bind();
 	GL.setViewport(0, 0, this._fboCurrent.width, this._fboCurrent.height);
 	GL.clear(0, 0, 0, 0);
-	this._vSim.render(this._fboCurrent.getTexture() );
+	this._vSim.render(this._fboCurrent.getTexture(), this.sum, this.easeSum.value );
 	this._fboTarget.unbind();
 
 
@@ -106,6 +108,8 @@ p.updateFbo = function() {
 
 
 p.render = function() {
+	// this.camera._ry.value += this.sum*.00001;
+	this.camera._ry.value += this.easeSum.value*.01;
 	if(this.count % params.skipCount == 0) {
 		this.updateFbo();
 		this.count = 0;	
@@ -153,17 +157,16 @@ p._getSoundData = function() {
 	}
 
 	sum /= f.length;
-	var threshold = 10;
-	var maxSpeed = 2.0;
+	var maxSpeed = params.maxSpeed;
 
-	if(sum > threshold) {
+	if(sum > params.threshold) {
 		this.sum += sum * 1.5;
-		this.easeSum.value = Math.min(this.sum, maxSpeed) * .1;
+		this.easeSum.value = Math.min(this.sum, maxSpeed);
 	} else {
 		this.easeSum.value = 0;
 	}
 
-	this.sum -= this.sum * .1;
+	this.sum -= this.sum * params.decreaseRate;
 	if(this.sum < 0) this.sum = 0;
 };
 
