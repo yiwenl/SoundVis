@@ -109,7 +109,7 @@ p.updateFbo = function() {
 
 p.render = function() {
 	// this.camera._ry.value += this.sum*.00001;
-	this.camera._ry.value += this.easeSum.value*.01;
+	// this.camera._ry.value += this.easeSum.value*.01;
 	if(this.count % params.skipCount == 0) {
 		this.updateFbo();
 		this.count = 0;	
@@ -122,7 +122,7 @@ p.render = function() {
 	GL.setViewport(0, 0, GL.width, GL.height);
 	this._getSoundData();
 	
-	this._vAxis.render();
+	// this._vAxis.render();
 	this._vDotPlane.render();
 	
 	this._vRender.render(this._fboTarget.getTexture(), this._fboCurrent.getTexture(), percent, this._textureGold);

@@ -7,10 +7,10 @@ window.params = {
 	skipCount:10,
 	range:650,
 	radius:700,
-	numParticles:256,
+	numParticles:400,
 
 	speed:.01,
-	mixture:.9,
+	mixture:.95,
 	threshold:50,
 	decreaseRate:.1,
 	maxSpeed:5.0,

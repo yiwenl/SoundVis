@@ -39,7 +39,7 @@ p._init = function() {
 			count ++;
 
 
-			positions.push([Math.random()*2000, Math.random(), Math.random()]);
+			positions.push([Math.random()*10, Math.random(), Math.random()]);
 			coords.push([ux, uy+1.0]);
 			indices.push(count);
 			count ++;

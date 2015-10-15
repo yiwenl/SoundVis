@@ -165,6 +165,7 @@ void main(void) {
 			if(pos.y < -range) {
 				float speedOffst = min(1.0, easeSum/8.0);
 				vel *= exponentialIn(speedOffst) * 1.0 + .75;
+				vel.x *= .1;
 			}
 
 			gl_FragColor = vec4(vel, 1.0);	
@@ -180,8 +181,8 @@ void main(void) {
     		float s = min(sum, cap) / cap;
     		s = exponentialIn(s);
 
-    		if(pos.y < -range) life.x = s * cap * (1.0 + extra.b);
-    		const float lifeDecrease = 5.0;
+    		if(pos.y < -range) life.x = (1.0-s) * cap * (1.0 + extra.b*2.0) *.1;
+    		const float lifeDecrease = 1.0;
     		life -= lifeDecrease;
 
     		gl_FragColor = vec4(life, 1.0);
